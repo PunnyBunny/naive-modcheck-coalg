@@ -1,0 +1,6 @@
+(executable
+ (public_name main)
+ (name main)
+ (libraries naive_modcheck_coalg)
+ (preprocess (pps ppx_jane)))
+

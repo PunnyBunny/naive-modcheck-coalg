@@ -1,0 +1,5 @@
+(library
+ (name test_naive_modcheck_coalg)
+ (libraries naive_modcheck_coalg)
+ (inline_tests)
+ (preprocess (pps ppx_jane ppx_expect)))

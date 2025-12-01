@@ -1,0 +1,18 @@
+(library
+ (name naive_modcheck_coalg)
+ (libraries core menhirLib)
+ (preprocess (pps ppx_jane)))
+
+(ocamllex model_lexer)
+
+(menhir
+ (modules model_parser)
+ (flags --table))
+
+(rule
+ (targets model_parser_messages.ml)
+ (deps model_parser.messages model_parser.mly)
+ (action
+   (with-stdout-to
+     %{targets}
+     (run menhir --compile-errors %{deps}))))

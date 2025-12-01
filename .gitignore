@@ -1,0 +1,44 @@
+# Dune build artifacts
+_build/
+*.install
+
+# OCaml compiled files
+*.cmi
+*.cmo
+*.cmx
+*.cmt
+*.cmti
+*.cma
+*.cmxa
+*.cmxs
+*.a
+*.o
+*.so
+*.annot
+*.exe
+
+# Merlin
+.merlin
+
+# OCaml local opam switch
+_opam/
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated parser files
+*.conflicts
+*.automaton
+
+# Test outputs
+*.corrected
+*.diff
+
+# Coverage
+bisect*.coverage
+_coverage/
