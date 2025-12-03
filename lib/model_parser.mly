@@ -1,6 +1,5 @@
 %{
   open Core
-  open Model_ast
 %}
 
 %token COLON

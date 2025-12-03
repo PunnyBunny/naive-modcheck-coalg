@@ -12,7 +12,7 @@ include struct
   module Graded_ast = Model_ast.Graded_ast
   module Probabilistic_ast = Model_ast.Probabilistic_ast
   module Monotone_ast = Model_ast.Monotone_ast
-  module Action = Model_ast.Action
-  module Ap = Model_ast.Ap
-  module State = Model_ast.State
+  module Action = Action
+  module Ap = Ap
+  module State = State
 end
