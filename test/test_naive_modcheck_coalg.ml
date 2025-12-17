@@ -1,5 +1,5 @@
 open! Core
-open Naive_modcheck_coalg
+open Naive_modcheck_coalg_parsers.Model
 
 (* ============================================================================ *)
 (* Relational Models *)

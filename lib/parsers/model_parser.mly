@@ -1,5 +1,6 @@
 %{
   open Core
+  open Naive_modcheck_coalg_common
 %}
 
 %token COLON

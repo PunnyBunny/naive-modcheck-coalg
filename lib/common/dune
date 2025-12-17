@@ -1,0 +1,5 @@
+(library
+ (name naive_modcheck_coalg_common)
+ (libraries core)
+ (preprocess
+  (pps ppx_jane)))
