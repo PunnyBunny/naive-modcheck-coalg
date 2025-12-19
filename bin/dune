@@ -1,6 +1,6 @@
 (executable
  (public_name main)
  (name main)
- (libraries naive_modcheck_coalg_common naive_modcheck_coalg_logics naive_modcheck_coalg_parsers)
+ (libraries naive_modcheck_coalg_common naive_modcheck_coalg_logics naive_modcheck_coalg_parsers naive_modcheck_coalg_checker core)
  (preprocess (pps ppx_jane)))
 
