@@ -10,5 +10,5 @@ module type S = sig
 end
 
 module type Intf = sig
-  module Make (Logic : Logic.S) : S with module Logic = Logic
+  module Make (L : Logic.S) : S with module Logic = L
 end

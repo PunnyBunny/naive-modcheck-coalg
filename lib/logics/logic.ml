@@ -9,18 +9,19 @@ struct
   type model = Spec.model [@@deriving sexp]
   type model_ast = Spec.model_ast [@@deriving sexp]
 
+  (** TODO: nnf when writing parser *)
   type formula =
     | True
     | False
     | Ap of Ap.t
-    | Not of formula
+    | Not of Ap.t
+    | Var of Var.t
     | And of formula * formula
     | Or of formula * formula
     | Diamond of Action.t * modality * formula
     | Box of Action.t * modality * formula
     | Mu of Var.t * formula
     | Nu of Var.t * formula
-    | Var of Var.t
   [@@deriving sexp]
 
   let model_of_ast = Spec.model_of_ast
@@ -36,5 +37,19 @@ struct
     Hashtbl.to_alist model |> List.map ~f:fst
 
   (* TODO: implement *)
-  let theta (_ : Var.t) : formula option = None
+  let get_theta formula =
+    let theta_table = Hashtbl.Poly.create () in
+    let rec build_theta_table = function
+      | True | False | Ap _ | Not _ -> ()
+      | Var _ -> ()
+      | And (f1, f2) | Or (f1, f2) ->
+          build_theta_table f1;
+          build_theta_table f2
+      | Diamond (_, _, f) | Box (_, _, f) -> build_theta_table f
+      | Mu (v, f) | Nu (v, f) ->
+          Hashtbl.set theta_table ~key:v ~data:f;
+          build_theta_table f
+    in
+    build_theta_table formula;
+    fun v -> Hashtbl.find theta_table v
 end

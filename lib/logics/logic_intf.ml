@@ -7,18 +7,19 @@ module type S = sig
   type modality [@@deriving sexp]
   type model_ast [@@deriving sexp]
 
+  (** in negation normal form *)
   type formula =
     | True
     | False
     | Ap of Ap.t
-    | Not of formula
+    | Not of Ap.t
+    | Var of Var.t
     | And of formula * formula
     | Or of formula * formula
     | Diamond of Action.t * modality * formula
     | Box of Action.t * modality * formula
     | Mu of Var.t * formula
     | Nu of Var.t * formula
-    | Var of Var.t
   [@@deriving sexp]
 
   val model_of_ast : model_ast -> model
@@ -34,7 +35,7 @@ module type S = sig
   val is_atom_in_state : model:model -> state:State.t -> atom:Ap.t -> bool
   val get_states : model:model -> State.t list
 
-  val theta : Var.t -> formula option
+  val get_theta : formula -> Var.t -> formula option
   (** Returns the Mu/Nu subformula that contains a given variable *)
 
   (* val eval_transition : model -> State.t -> Action.t -> transition option
