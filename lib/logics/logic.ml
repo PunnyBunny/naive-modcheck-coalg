@@ -24,6 +24,11 @@ struct
     | Nu of Var.t * formula
   [@@deriving sexp]
 
+  type helper_functions = {
+    theta : Var.t -> formula option;
+    alternation_depth : Var.t -> int option;
+  }
+
   let model_of_ast = Spec.model_of_ast
   let predicate_lifting = Spec.predicate_lifting
 
@@ -31,7 +36,7 @@ struct
       =
     match Hashtbl.find model state with
     | None -> false
-    | Some (props, _) -> List.mem props atom ~equal:phys_equal
+    | Some (atoms, _) -> List.mem atoms atom ~equal:Ap.equal
 
   let get_states ~(model : model) : State.t list =
     Hashtbl.to_alist model |> List.map ~f:fst
@@ -52,4 +57,30 @@ struct
     in
     build_theta_table formula;
     fun v -> Hashtbl.find theta_table v
+
+  let get_alternation_depth formula =
+    let alternation_depth_table = Hashtbl.Poly.create () in
+    let rec build_table = function
+      | True | False | Ap _ | Not _ | Var _ -> 0
+      | And (f1, f2) | Or (f1, f2) -> Int.max (build_table f1) (build_table f2)
+      | Diamond (_, _, f) | Box (_, _, f) -> build_table f
+      | Mu (v, f) ->
+          let depth = build_table f in
+          let new_depth = if depth mod 2 = 0 then depth + 1 else depth in
+          Hashtbl.set alternation_depth_table ~key:v ~data:new_depth;
+          new_depth
+      | Nu (v, f) ->
+          let depth = build_table f in
+          let new_depth = if depth mod 2 = 1 then depth + 1 else depth in
+          Hashtbl.set alternation_depth_table ~key:v ~data:new_depth;
+          new_depth
+    in
+    ignore (build_table formula);
+    fun f -> Hashtbl.find alternation_depth_table f
+
+  let get_helper_functions formula =
+    {
+      theta = get_theta formula;
+      alternation_depth = get_alternation_depth formula;
+    }
 end

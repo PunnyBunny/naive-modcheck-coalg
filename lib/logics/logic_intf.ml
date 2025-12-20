@@ -22,6 +22,12 @@ module type S = sig
     | Nu of Var.t * formula
   [@@deriving sexp]
 
+  type helper_functions = {
+    theta : Var.t -> formula option;
+        (** Returns the Mu/Nu subformula that contains a given variable *)
+    alternation_depth : Var.t -> int option;
+  }
+
   val model_of_ast : model_ast -> model
 
   val predicate_lifting :
@@ -34,9 +40,7 @@ module type S = sig
 
   val is_atom_in_state : model:model -> state:State.t -> atom:Ap.t -> bool
   val get_states : model:model -> State.t list
-
-  val get_theta : formula -> Var.t -> formula option
-  (** Returns the Mu/Nu subformula that contains a given variable *)
+  val get_helper_functions : formula -> helper_functions
 
   (* val eval_transition : model -> State.t -> Action.t -> transition option
   (** Evaluate model at state to get transition for action *)

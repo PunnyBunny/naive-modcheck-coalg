@@ -11,9 +11,16 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     | ModalNode of Logic.formula * State.t list
   [@@deriving sexp]
 
-  type priority = int
-  type player = Eloise | Abelard [@@deriving sexp]
-  type game = (node, player * priority * node list) Hashtbl.t
+  module Priority = struct
+    type t = int [@@deriving sexp]
+  end
+
+  module Player = struct
+    type t = Eloise | Abelard [@@deriving sexp]
+  end
+
+  type game = (node, Player.t * Priority.t * node list) Hashtbl.Poly.t
+  [@@deriving sexp]
 
   (* Helper: powerset *)
   let rec powerset lst =
@@ -29,14 +36,16 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     let game = Hashtbl.Poly.create () in
     let states = Logic.get_states ~model in
     let powerset_of_states = powerset states in
-    let theta = Logic.get_theta formula in
+    let { theta; alternation_depth } : Logic.helper_functions =
+      Logic.get_helper_functions formula
+    in
 
     let rec build_formula_node (formula : Logic.formula) (state : State.t) :
         unit =
       let node = FormulaNode (formula, state) in
       if Hashtbl.mem game node then ()
       else
-        let add_node owner priority successors =
+        let add_node (owner : Player.t) priority successors =
           Hashtbl.set game ~key:node ~data:(owner, priority, successors)
         in
         match formula with
@@ -58,13 +67,9 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
               [ FormulaNode (sub_fmla1, state); FormulaNode (sub_fmla2, state) ];
             build_formula_node sub_fmla1 state;
             build_formula_node sub_fmla2 state
-        | Mu (_x, sub_fmla) ->
-            (* TODO: Mu has odd priority (approx: 1 for now) *)
-            add_node Eloise 1 [ FormulaNode (sub_fmla, state) ];
-            build_formula_node sub_fmla state
-        | Nu (_x, sub_fmla) ->
-            (* TODO: Nu has even priority (approx: 2 for now) *)
-            add_node Eloise 2 [ FormulaNode (sub_fmla, state) ];
+        | Mu (x, sub_fmla) | Nu (x, sub_fmla) ->
+            let priority = alternation_depth x |> Option.value_exn in
+            add_node Eloise priority [ FormulaNode (sub_fmla, state) ];
             build_formula_node sub_fmla state
         | Var x -> (
             match theta x with
@@ -114,18 +119,53 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     build_formula_node formula point;
     game
 
-  (* Simple fixpoint solver (placeholder - would use proper parity game solver) *)
+  (* Convert node to string for debugging *)
+  let string_of_node (node : node) : string = Sexp.to_string (sexp_of_node node)
+
+  (* Solve the parity game using PGSolver *)
   let solve_game (game : game) (starting_node : node) : bool =
-    (* For now, just check if starting node is owned by Abelard (very naive) *)
-    match Hashtbl.find game starting_node with
-    | None -> false
-    | Some (owner, _, _) -> (
-        match owner with Abelard -> true | Eloise -> false)
+    let node_keys = Hashtbl.keys game |> List.of_list in
+    let node_key_array = Array.of_list node_keys in
+
+    let key_to_index =
+      List.mapi node_keys ~f:(fun i node -> (node, i))
+      |> Hashtbl.Poly.of_alist_exn
+    in
+
+    let pgsolver_parity_game =
+      Paritygame.pg_init (Array.length node_key_array) (fun i ->
+          let node = node_key_array.(i) in
+          let owner, priority, successors = Hashtbl.find_exn game node in
+
+          let successor_indices =
+            List.map successors ~f:(fun succ ->
+                Hashtbl.find_exn key_to_index succ)
+          in
+
+          let owner_idx =
+            match owner with
+            | Eloise -> Paritygame.plr_Even
+            | Abelard -> Paritygame.plr_Odd
+          in
+
+          (priority, owner_idx, successor_indices, Some (string_of_node node)))
+    in
+
+    let solver, _, _ = Solvers.find_solver "recursive" in
+    let solution, strategy = solver [||] pgsolver_parity_game in
+    let starting_index = Hashtbl.find_exn key_to_index starting_node in
+    let winner = solution.(starting_index) in
+
+    printf "[Game]\n%s\n" (Paritygame.game_to_string pgsolver_parity_game);
+    printf "[Solution]\n%s\n\n" (Paritygame.format_solution solution);
+    printf "[Strategy]\n%s\n\n" (Paritygame.format_strategy strategy);
+    printf "\n[Winner]: %s\n%!"
+      (if Poly.(winner = Paritygame.plr_Even) then "Eloise" else "Abelard");
+    Poly.(winner = Paritygame.plr_Even)
 
   (* Main model checking entry point *)
   let model_check ~(model : Logic.model) ~(point : State.t)
       ~(formula : Logic.formula) : bool =
-    (* Create empty theta (no bound variables initially) *)
     let game = build_game ~model ~point ~formula in
     let starting_node = FormulaNode (formula, point) in
 
