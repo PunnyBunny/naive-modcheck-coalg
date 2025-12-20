@@ -30,7 +30,7 @@ struct
   }
 
   let model_of_ast = Spec.model_of_ast
-  let predicate_lifting = Spec.predicate_lifting
+  let one_step_satisfaction = Spec.one_step_satisfaction
 
   let is_atom_in_state ~(model : model) ~(state : State.t) ~(atom : Ap.t) : bool
       =

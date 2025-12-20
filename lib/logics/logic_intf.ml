@@ -26,27 +26,29 @@ module type S = sig
     theta : Var.t -> formula option;
         (** Returns the Mu/Nu subformula that contains a given variable *)
     alternation_depth : Var.t -> int option;
+        (** Returns ad(theta(X)) for a variable X *)
   }
 
   val model_of_ast : model_ast -> model
+  (** Constructs the model out of the abstract syntax tree *)
 
-  val predicate_lifting :
-    box_or_diamond:[ `Box | `Diamond ] ->
+  val one_step_satisfaction :
     model:model ->
+    box_or_diamond:[ `Box | `Diamond ] ->
     state:State.t ->
     states:State.t list ->
     action:Action.t ->
     bool
+  (** Returns the solution to the one step satisfaction problem: whether `s \in
+      [[♥]]U` (predicate lifting).
+
+      - s is denoted by [state]
+      - ♥ is denoted by [box_or_diamond] (TODO: and modality)
+      - U is denoted by [states] *)
 
   val is_atom_in_state : model:model -> state:State.t -> atom:Ap.t -> bool
   val get_states : model:model -> State.t list
   val get_helper_functions : formula -> helper_functions
-
-  (* val eval_transition : model -> State.t -> Action.t -> transition option
-  (** Evaluate model at state to get transition for action *)
-
-  val check : model -> State.t -> formula -> bool
-  * Model check a formula at a state *)
 end
 
 module type LOGIC_SPECIFICATION = sig
@@ -60,9 +62,9 @@ module type LOGIC_SPECIFICATION = sig
 
   val model_of_ast : model_ast -> model
 
-  val predicate_lifting :
-    box_or_diamond:[ `Box | `Diamond ] ->
+  val one_step_satisfaction :
     model:model ->
+    box_or_diamond:[ `Box | `Diamond ] ->
     state:State.t ->
     states:State.t list ->
     action:Action.t ->

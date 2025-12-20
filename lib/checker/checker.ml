@@ -80,8 +80,8 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
         | Diamond (a, _m, sub_fmla) ->
             let satisfying_sets =
               List.filter powerset_of_states ~f:(fun state_set ->
-                  Logic.predicate_lifting ~box_or_diamond:`Diamond ~model ~state
-                    ~states:state_set ~action:a)
+                  Logic.one_step_satisfaction ~box_or_diamond:`Diamond ~model
+                    ~state ~states:state_set ~action:a)
             in
             let modal_nodes =
               List.map satisfying_sets ~f:(fun states ->
@@ -93,7 +93,7 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
         | Box (a, _m, sub_fmla) ->
             let satisfying_sets =
               List.filter powerset_of_states ~f:(fun state_set ->
-                  Logic.predicate_lifting ~box_or_diamond:`Box ~model ~state
+                  Logic.one_step_satisfaction ~box_or_diamond:`Box ~model ~state
                     ~states:state_set ~action:a)
             in
             let modal_nodes =

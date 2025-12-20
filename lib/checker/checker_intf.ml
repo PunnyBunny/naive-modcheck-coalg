@@ -2,6 +2,7 @@ open! Core
 open Naive_modcheck_coalg_common
 open Naive_modcheck_coalg_logics
 
+(** Interface for a concrete checker instance for a specific type of logic *)
 module type S = sig
   module Logic : Logic.S
 

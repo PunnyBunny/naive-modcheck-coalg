@@ -25,14 +25,9 @@ module M :
 
   let model_of_ast (model_ast : model_ast) : model = model_ast
 
-  (** returns (xi (C -> F C) -> state (c) -> states (D) -> modal arg -> bool)
-      [[<>]] is (states (D) -> P(F C))
-
-      so basically: check if xi(state): F C in [[<>]] (D)
-
-      modal arg is action *)
-  let predicate_lifting ~(box_or_diamond : [ `Box | `Diamond ]) ~(model : model)
-      ~(state : State.t) ~(states : State.t list) ~(action : Action.t) =
+  let one_step_satisfaction ~(model : model)
+      ~(box_or_diamond : [ `Box | `Diamond ]) ~(state : State.t)
+      ~(states : State.t list) ~(action : Action.t) =
     let successors = next_states model state action in
     match box_or_diamond with
     | `Diamond ->
