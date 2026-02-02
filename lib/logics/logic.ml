@@ -103,4 +103,7 @@ module Make (Spec : LOGIC_SPECIFICATION) :
       theta = get_theta formula;
       alternation_depth = get_alternation_depth formula;
     }
+
+  let parse_formula = Spec.parse_formula
+  let parse_model = Spec.parse_model
 end

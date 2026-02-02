@@ -44,6 +44,11 @@ module M :
     | `Box ->
         List.for_all successors ~f:(fun s ->
             List.mem states s ~equal:State.equal)
+
+  let parse_formula =
+    Naive_modcheck_coalg_parsers.Formula.parse_relational_formula
+
+  let parse_model = Naive_modcheck_coalg_parsers.Model.parse_relational_model
 end
 
 include Logic.Make (M)

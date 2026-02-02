@@ -39,6 +39,12 @@ module type S = sig
   val is_atom_in_state : model:Model.t -> state:State.t -> atom:Ap.t -> bool
   val get_states : model:Model.t -> State.t list
   val get_helper_functions : Formula.t -> helper_functions
+
+  val parse_formula : string -> Formula_ast.t
+  (** Parse a formula from a string *)
+
+  val parse_model : string -> Model.t
+  (** Parse a model from a string *)
 end
 
 module type LOGIC_SPECIFICATION = sig
@@ -58,6 +64,9 @@ module type LOGIC_SPECIFICATION = sig
     states:State.t list ->
     action:Action.t ->
     bool
+
+  val parse_formula : string -> Formula_ast.t
+  val parse_model : string -> Model.t
 end
 
 module type Intf = sig
