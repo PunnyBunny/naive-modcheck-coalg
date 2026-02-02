@@ -7,7 +7,7 @@ module type S = sig
   module Logic : Logic.S
 
   val model_check :
-    model:Logic.model -> point:State.t -> formula:Logic.formula -> bool
+    model:Logic.Model.t -> point:State.t -> formula:Logic.Formula.t -> bool
 end
 
 module type Intf = sig

@@ -1,18 +1,28 @@
 open! Core
 open Naive_modcheck_coalg_common
-open Naive_modcheck_coalg_parsers.Model
+
+module Relational_formula = Formula_intf.Make (struct
+  type t = unit [@@deriving sexp]
+end)
+
+module Relational_model = Model_intf.Make (struct
+  type t = State.t list [@@deriving sexp]
+end)
 
 module M :
   Logic_intf.LOGIC_SPECIFICATION
     with type modality = unit
-     and type model_ast = Relational_ast.t = struct
-  type transition = State.t list [@@deriving sexp]
+     and type transition = State.t list
+     and module Model = Relational_model
+     and module Formula = Relational_formula
+     and module Formula_ast = Naive_modcheck_coalg_parsers.Formula.Ast
+                              .Relational_ast = struct
   type modality = unit [@@deriving sexp]
-  type model_ast = Relational_ast.t [@@deriving sexp]
+  type transition = State.t list [@@deriving sexp]
 
-  type model =
-    (State.t, Ap.t list * (Action.t, transition) Hashtbl.Poly.t) Hashtbl.Poly.t
-  [@@deriving sexp]
+  module Model = Relational_model
+  module Formula = Relational_formula
+  module Formula_ast = Naive_modcheck_coalg_parsers.Formula.Ast.Relational_ast
 
   let next_states model state action =
     match Hashtbl.find model state with
@@ -23,9 +33,7 @@ module M :
           Hashtbl.find transitions action
           |> Option.value_exn ~message:"No transition found"
 
-  let model_of_ast (model_ast : model_ast) : model = model_ast
-
-  let one_step_satisfaction ~(model : model)
+  let one_step_satisfaction ~(model : Model.t)
       ~(box_or_diamond : [ `Box | `Diamond ]) ~(state : State.t)
       ~(states : State.t list) ~(action : Action.t) =
     let successors = next_states model state action in

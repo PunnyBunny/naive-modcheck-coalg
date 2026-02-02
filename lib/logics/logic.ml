@@ -3,48 +3,68 @@ open Naive_modcheck_coalg_common
 include Logic_intf
 
 module Make (Spec : LOGIC_SPECIFICATION) :
-  S with type modality = Spec.modality and type model_ast = Spec.model_ast =
-struct
+  S
+    with type modality = Spec.modality
+     and type transition = Spec.transition
+     and module Model = Spec.Model
+     and module Formula = Spec.Formula
+     and module Formula_ast = Spec.Formula_ast = struct
   type modality = Spec.modality [@@deriving sexp]
-  type model = Spec.model [@@deriving sexp]
-  type model_ast = Spec.model_ast [@@deriving sexp]
+  type transition = Spec.transition [@@deriving sexp]
 
-  (** TODO: nnf when writing parser *)
-  type formula =
-    | True
-    | False
-    | Ap of Ap.t
-    | Not of Ap.t
-    | Var of Var.t
-    | And of formula * formula
-    | Or of formula * formula
-    | Diamond of Action.t * modality * formula
-    | Box of Action.t * modality * formula
-    | Mu of Var.t * formula
-    | Nu of Var.t * formula
-  [@@deriving sexp]
+  module Model = Spec.Model
+  module Formula = Spec.Formula
+  module Formula_ast = Spec.Formula_ast
+
+  (** Convert AST to NNF formula by pushing negations inward *)
+  let rec formula_of_ast (ast : Formula_ast.t) : Formula.t =
+    match ast with
+    | True -> True
+    | False -> False
+    | Ap p -> Ap p
+    | Var x -> Var x
+    | And (f1, f2) -> And (formula_of_ast f1, formula_of_ast f2)
+    | Or (f1, f2) -> Or (formula_of_ast f1, formula_of_ast f2)
+    | Diamond (a, m, f) -> Diamond (a, m, formula_of_ast f)
+    | Box (a, m, f) -> Box (a, m, formula_of_ast f)
+    | Mu (x, f) -> Mu (x, formula_of_ast f)
+    | Nu (x, f) -> Nu (x, formula_of_ast f)
+    | Not f -> negate (formula_of_ast f)
+
+  (** Negate a formula, pushing the negation inward to maintain NNF *)
+  and negate (f : Formula.t) : Formula.t =
+    match f with
+    | True -> False
+    | False -> True
+    | Ap p -> Not p
+    | Not p -> Ap p
+    | Var _ -> failwith "Cannot negate a fixpoint variable"
+    | And (f1, f2) -> Or (negate f1, negate f2)
+    | Or (f1, f2) -> And (negate f1, negate f2)
+    | Diamond (a, m, f) -> Box (a, m, negate f)
+    | Box (a, m, f) -> Diamond (a, m, negate f)
+    | Mu (x, f) -> Nu (x, negate f)
+    | Nu (x, f) -> Mu (x, negate f)
 
   type helper_functions = {
-    theta : Var.t -> formula option;
+    theta : Var.t -> Formula.t option;
     alternation_depth : Var.t -> int option;
   }
 
-  let model_of_ast = Spec.model_of_ast
   let one_step_satisfaction = Spec.one_step_satisfaction
 
-  let is_atom_in_state ~(model : model) ~(state : State.t) ~(atom : Ap.t) : bool
-      =
+  let is_atom_in_state ~(model : Model.t) ~(state : State.t) ~(atom : Ap.t) :
+      bool =
     match Hashtbl.find model state with
     | None -> false
     | Some (atoms, _) -> List.mem atoms atom ~equal:Ap.equal
 
-  let get_states ~(model : model) : State.t list =
+  let get_states ~(model : Model.t) : State.t list =
     Hashtbl.to_alist model |> List.map ~f:fst
 
-  (* TODO: implement *)
   let get_theta formula =
     let theta_table = Hashtbl.Poly.create () in
-    let rec build_theta_table = function
+    let rec build_theta_table : Formula.t -> unit = function
       | True | False | Ap _ | Not _ -> ()
       | Var _ -> ()
       | And (f1, f2) | Or (f1, f2) ->
@@ -60,7 +80,7 @@ struct
 
   let get_alternation_depth formula =
     let alternation_depth_table = Hashtbl.Poly.create () in
-    let rec build_table = function
+    let rec build_table : Formula.t -> int = function
       | True | False | Ap _ | Not _ | Var _ -> 0
       | And (f1, f2) | Or (f1, f2) -> Int.max (build_table f1) (build_table f2)
       | Diamond (_, _, f) | Box (_, _, f) -> build_table f

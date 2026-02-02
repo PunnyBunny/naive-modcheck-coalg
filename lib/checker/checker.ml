@@ -7,8 +7,8 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
 
   (* Game node types *)
   type node =
-    | FormulaNode of Logic.formula * State.t
-    | ModalNode of Logic.formula * State.t list
+    | FormulaNode of Logic.Formula.t * State.t
+    | ModalNode of Logic.Formula.t * State.t list
   [@@deriving sexp]
 
   module Priority = struct
@@ -31,8 +31,8 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
         ps @ List.map ps ~f:(fun subset -> x :: subset)
 
   (* Build parity game from model and formula *)
-  let build_game ~(model : Logic.model) ~(point : State.t)
-      ~(formula : Logic.formula) : game =
+  let build_game ~(model : Logic.Model.t) ~(point : State.t)
+      ~(formula : Logic.Formula.t) : game =
     let game = Hashtbl.Poly.create () in
     let states = Logic.get_states ~model in
     let powerset_of_states = powerset states in
@@ -40,7 +40,7 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
       Logic.get_helper_functions formula
     in
 
-    let rec build_formula_node (formula : Logic.formula) (state : State.t) :
+    let rec build_formula_node (formula : Logic.Formula.t) (state : State.t) :
         unit =
       let node = FormulaNode (formula, state) in
       if Hashtbl.mem game node then ()
@@ -103,7 +103,7 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
             add_node Abelard 0 modal_nodes;
             List.iter satisfying_sets ~f:(fun states ->
                 build_modal_node sub_fmla states)
-    and build_modal_node (sub_fmla : Logic.formula) (states : State.t list) :
+    and build_modal_node (sub_fmla : Logic.Formula.t) (states : State.t list) :
         unit =
       let node = ModalNode (sub_fmla, states) in
       if Hashtbl.mem game node then ()
@@ -164,8 +164,8 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     Poly.(winner = Paritygame.plr_Even)
 
   (* Main model checking entry point *)
-  let model_check ~(model : Logic.model) ~(point : State.t)
-      ~(formula : Logic.formula) : bool =
+  let model_check ~(model : Logic.Model.t) ~(point : State.t)
+      ~(formula : Logic.Formula.t) : bool =
     let game = build_game ~model ~point ~formula in
     let starting_node = FormulaNode (formula, point) in
 
