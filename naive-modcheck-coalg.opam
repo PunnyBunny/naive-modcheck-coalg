@@ -13,6 +13,7 @@ depends: [
   "menhir"
   "core"
   "ounit2"
+  "zarith"
   "odoc" {with-doc}
 ]
 build: [

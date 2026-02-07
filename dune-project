@@ -18,7 +18,7 @@
 (package
  (name naive-modcheck-coalg)
  (synopsis "A naive model checking library for coalgebras")
- (depends ocaml dune menhir core ounit2))
+ (depends ocaml dune menhir core ounit2 zarith))
 
 (using menhir 3.0)
 

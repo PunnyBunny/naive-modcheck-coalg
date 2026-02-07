@@ -6,6 +6,7 @@ let al = ['a'-'z''A'-'Z']
 let num = ['0'-'9']
 let alnum = (al|num)+
 let id = ['a'-'z''A'-'Z'](alnum | '_')*
+let digit = ['0'-'9']+
 
 rule lex = parse
 	  | [' ' '\t']+ { lex lexbuf }
@@ -22,6 +23,9 @@ rule lex = parse
     | '>' { Formula_parser.RANGLE }
     | '[' { Formula_parser.LBRACK }
     | ']' { Formula_parser.RBRACK }
+
+    | "/" { Formula_parser.SLASH }
+    | digit as n { Formula_parser.INT (int_of_string n) }
     | "." { Formula_parser.DOT }
     | '(' { Formula_parser.LPAREN }
     | ')' { Formula_parser.RPAREN }

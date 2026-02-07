@@ -35,7 +35,7 @@ graded_model: xi = model(func(state, INT)) EOF { xi };
 probabilistic_model: xi = model(func(state, frac)) EOF { xi };
 monotone_model: xi = model(list(list(state))) EOF { xi };
 
-frac: n = INT SLASH d = INT { (n, d) }
+frac: n = INT SLASH d = INT { Frac.make n d }
 
 tuple(A, B): LNBRACE a = A COMMA b = B RNBRACE { (a, b) }
 

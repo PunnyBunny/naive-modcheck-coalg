@@ -22,3 +22,10 @@ end
 
 module Relational_ast : S with type modality = unit
 (** Relational logic AST: unit modality *)
+
+(** Probability threshold for probabilistic modal logic. For diamond <p/q>, the
+    semantics is "probability > p/q". For box [p/q], the semantics is
+    "probability <= p/q". *)
+
+module Probabilistic_ast : S with type modality = Frac.t
+(** Probabilistic modal logic AST: fraction as modality *)

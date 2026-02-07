@@ -31,3 +31,6 @@ let parse_formula input (type t) (start : Lexing.position -> t I.checkpoint) : t
 
 let parse_relational_formula (input : string) =
   parse_formula input Formula_parser.Incremental.relational_formula
+
+let parse_probabilistic_formula (input : string) =
+  parse_formula input Formula_parser.Incremental.probabilistic_formula

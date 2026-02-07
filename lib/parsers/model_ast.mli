@@ -6,7 +6,7 @@ module Graded_ast :
   Model_intf.S with type transition = (State.t, int) Hashtbl.Poly.t
 
 module Probabilistic_ast : sig
-  type frac = int * int [@@deriving sexp]
+  type frac = Frac.t [@@deriving sexp]
 
   include Model_intf.S with type transition = (State.t, frac) Hashtbl.Poly.t
 end

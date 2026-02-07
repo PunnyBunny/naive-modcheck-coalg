@@ -10,7 +10,7 @@ module Graded_ast = Model_intf.Make (struct
 end)
 
 module Probabilistic_ast = struct
-  type frac = int * int [@@deriving sexp]
+  type frac = Frac.t [@@deriving sexp]
 
   include Model_intf.Make (struct
     type t = (State.t, frac) Hashtbl.Poly.t [@@deriving sexp]

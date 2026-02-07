@@ -44,3 +44,13 @@ end
 module Relational_ast = Make (struct
   type t = unit [@@deriving sexp]
 end)
+
+type frac = Frac.t [@@deriving sexp]
+(** Probability threshold for probabilistic modal logic. For diamond <p/q>, the
+    semantics is "probability > p/q". For box [p/q], the semantics is
+    "probability <= p/q". *)
+
+(** Probabilistic modal logic AST: fraction as modality *)
+module Probabilistic_ast = Make (struct
+  type t = frac [@@deriving sexp]
+end)

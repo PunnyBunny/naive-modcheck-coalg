@@ -14,6 +14,7 @@ module Formula = struct
   open Formula_parser_wrapper
 
   let parse_relational_formula = parse_relational_formula
+  let parse_probabilistic_formula = parse_probabilistic_formula
 
   module Ast = Formula_ast
 end

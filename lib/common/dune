@@ -1,5 +1,5 @@
 (library
  (name naive_modcheck_coalg_common)
- (libraries core)
+ (libraries core zarith)
  (preprocess
   (pps ppx_jane)))
