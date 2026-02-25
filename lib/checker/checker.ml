@@ -74,7 +74,8 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
         | Var x -> (
             match theta x with
             | Some f_def ->
-                add_node Eloise 0 [ FormulaNode (f_def, state) ];
+                let priority = alternation_depth x |> Option.value_exn in
+                add_node Eloise priority [ FormulaNode (f_def, state) ];
                 build_formula_node f_def state
             | None -> failwith ("Unbound variable: " ^ Var.to_string x))
         | Diamond (a, _m, sub_fmla) ->
@@ -103,6 +104,20 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
             add_node Abelard 0 modal_nodes;
             List.iter satisfying_sets ~f:(fun states ->
                 build_modal_node sub_fmla states)
+    (*  (* Use only the minimal Box-satisfying set (intersection of all satisfying
+               sets = exact successors for relational, distribution support for
+               probabilistic). This prevents Abelard from challenging with non-successor
+               states drawn from artificially large witness sets. *)
+            (match satisfying_sets with
+            | [] -> add_node Abelard 0 []
+            | first :: rest ->
+                let min_set =
+                  List.fold rest ~init:first ~f:(fun acc s_set ->
+                      List.filter acc ~f:(fun s ->
+                          List.mem s_set s ~equal:State.equal))
+                in
+                add_node Abelard 0 [ ModalNode (sub_fmla, min_set) ];
+                build_modal_node sub_fmla min_set)*)
     and build_modal_node (sub_fmla : Logic.Formula.t) (states : State.t list) :
         unit =
       let node = ModalNode (sub_fmla, states) in
@@ -156,10 +171,10 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     let winner = solution.(starting_index) in
 
     if verbose then (
-    printf "[Game]\n%s\n" (Paritygame.game_to_string pgsolver_parity_game);
-    printf "[Solution]\n%s\n\n" (Paritygame.format_solution solution);
-    printf "[Strategy]\n%s\n\n" (Paritygame.format_strategy strategy);
-    printf "\n[Winner]: %s\n%!"
+      printf "[Game]\n%s\n" (Paritygame.game_to_string pgsolver_parity_game);
+      printf "[Solution]\n%s\n\n" (Paritygame.format_solution solution);
+      printf "[Strategy]\n%s\n\n" (Paritygame.format_strategy strategy);
+      printf "\n[Winner]: %s\n%!"
         (if Poly.(winner = Paritygame.plr_Even) then "Eloise" else "Abelard"));
     Poly.(winner = Paritygame.plr_Even)
 
