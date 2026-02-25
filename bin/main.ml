@@ -16,6 +16,6 @@ let () =
   in
   let formula = Logics.Relational.formula_of_ast formula_ast in
   let result =
-    Checkers.Relational.model_check ~model ~point:(State.of_string "x") ~formula
+    Checkers.Relational.model_check ~verbose:true ~model ~point:(State.of_string "x") ~formula
   in
   printf "Model check result: %b\n" result

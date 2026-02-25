@@ -123,7 +123,7 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
   let string_of_node (node : node) : string = Sexp.to_string (sexp_of_node node)
 
   (* Solve the parity game using PGSolver *)
-  let solve_game (game : game) (starting_node : node) : bool =
+  let solve_game ~verbose (game : game) (starting_node : node) : bool =
     let node_keys = Hashtbl.keys game |> List.of_list in
     let node_key_array = Array.of_list node_keys in
 
@@ -151,23 +151,23 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
           (priority, owner_idx, successor_indices, Some (string_of_node node)))
     in
 
-    let solver, _, _ = Solvers.find_solver "recursive" in
-    let solution, strategy = solver [||] pgsolver_parity_game in
+    let solution, strategy = Recursive.solve pgsolver_parity_game in
     let starting_index = Hashtbl.find_exn key_to_index starting_node in
     let winner = solution.(starting_index) in
 
+    if verbose then (
     printf "[Game]\n%s\n" (Paritygame.game_to_string pgsolver_parity_game);
     printf "[Solution]\n%s\n\n" (Paritygame.format_solution solution);
     printf "[Strategy]\n%s\n\n" (Paritygame.format_strategy strategy);
     printf "\n[Winner]: %s\n%!"
-      (if Poly.(winner = Paritygame.plr_Even) then "Eloise" else "Abelard");
+        (if Poly.(winner = Paritygame.plr_Even) then "Eloise" else "Abelard"));
     Poly.(winner = Paritygame.plr_Even)
 
   (* Main model checking entry point *)
-  let model_check ~(model : Logic.Model.t) ~(point : State.t)
+  let model_check ~verbose ~(model : Logic.Model.t) ~(point : State.t)
       ~(formula : Logic.Formula.t) : bool =
     let game = build_game ~model ~point ~formula in
     let starting_node = FormulaNode (formula, point) in
 
-    solve_game game starting_node
+    solve_game ~verbose game starting_node
 end
