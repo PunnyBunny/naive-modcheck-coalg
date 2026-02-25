@@ -1,5 +1,9 @@
-(library
- (name test_naive_modcheck_coalg)
- (libraries naive_modcheck_coalg_parsers naive_modcheck_coalg_logics)
- (inline_tests)
- (preprocess (pps ppx_jane ppx_expect)))
+(tests
+ (names test_naive_modcheck_coalg test_model_checking)
+ (libraries naive_modcheck_coalg_parsers
+            naive_modcheck_coalg_logics
+            naive_modcheck_coalg_common
+            naive_modcheck_coalg_checker
+            core
+            ounit2)
+ (preprocess (pps ppx_jane)))
