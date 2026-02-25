@@ -1,5 +1,12 @@
 %{
   open Naive_modcheck_coalg_common
+
+  (* Track bound fixpoint variables during parsing so that IDENT tokens
+     that refer to a binder are emitted as Var, not Ap. *)
+  let _bound : string list ref = ref []
+  let _push x = _bound := x :: !_bound
+  let _pop () = match !_bound with _ :: rest -> _bound := rest | [] -> ()
+  let _is_bound x = Stdlib.List.mem x !_bound
 %}
 
 %token TRUE
@@ -30,8 +37,17 @@
 
 %%
 
-relational_formula: 
-  | f = rel_formula EOF { f }
+(* Binder prefixes: reduced before the body is parsed, so
+   the variable is visible during body parsing. *)
+
+mu_binder:
+  | MU x = IDENT DOT { _push x; x }
+
+nu_binder:
+  | NU x = IDENT DOT { _push x; x }
+
+relational_formula:
+  | f = rel_formula EOF { _bound := []; f }
 
 rel_formula:
   | TRUE { Formula_ast.Relational_ast.True }
@@ -42,12 +58,15 @@ rel_formula:
   | f1 = rel_formula OR f2 = rel_formula { Formula_ast.Relational_ast.Or (f1, f2) }
   | LANGLE a = action RANGLE f = rel_formula { Formula_ast.Relational_ast.Diamond (a, (), f) }
   | LBRACK a = action RBRACK f = rel_formula { Formula_ast.Relational_ast.Box (a, (), f) }
-  | MU x = IDENT DOT f = rel_formula { Formula_ast.Relational_ast.Mu (Var.of_string x, f) }
-  | NU x = IDENT DOT f = rel_formula { Formula_ast.Relational_ast.Nu (Var.of_string x, f) }
-  | p = IDENT { Formula_ast.Relational_ast.Ap (Ap.of_string p) }
+  | x = mu_binder f = rel_formula { _pop (); Formula_ast.Relational_ast.Mu (Var.of_string x, f) }
+  | x = nu_binder f = rel_formula { _pop (); Formula_ast.Relational_ast.Nu (Var.of_string x, f) }
+  | p = IDENT {
+      if _is_bound p then Formula_ast.Relational_ast.Var (Var.of_string p)
+      else Formula_ast.Relational_ast.Ap (Ap.of_string p)
+    }
 
 probabilistic_formula:
-  | f = prob_formula EOF { f }
+  | f = prob_formula EOF { _bound := []; f }
 
 prob_formula:
   | TRUE { Formula_ast.Probabilistic_ast.True }
@@ -58,9 +77,12 @@ prob_formula:
   | f1 = prob_formula OR f2 = prob_formula { Formula_ast.Probabilistic_ast.Or (f1, f2) }
   | LANGLE n = INT SLASH d = INT a = action RANGLE f = prob_formula { Formula_ast.Probabilistic_ast.Diamond (a, (Frac.make n d), f) }
   | LBRACK n = INT SLASH d = INT a = action RBRACK f = prob_formula { Formula_ast.Probabilistic_ast.Box (a, (Frac.make n d), f) }
-  | MU x = IDENT DOT f = prob_formula { Formula_ast.Probabilistic_ast.Mu (Var.of_string x, f) }
-  | NU x = IDENT DOT f = prob_formula { Formula_ast.Probabilistic_ast.Nu (Var.of_string x, f) }
-  | p = IDENT { Formula_ast.Probabilistic_ast.Ap (Ap.of_string p) }
+  | x = mu_binder f = prob_formula { _pop (); Formula_ast.Probabilistic_ast.Mu (Var.of_string x, f) }
+  | x = nu_binder f = prob_formula { _pop (); Formula_ast.Probabilistic_ast.Nu (Var.of_string x, f) }
+  | p = IDENT {
+      if _is_bound p then Formula_ast.Probabilistic_ast.Var (Var.of_string p)
+      else Formula_ast.Probabilistic_ast.Ap (Ap.of_string p)
+    }
 
 action:
   | { Action.of_string "" } (* empty action for monomodal logic *)
