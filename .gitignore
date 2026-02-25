@@ -42,3 +42,6 @@ _opam/
 # Coverage
 bisect*.coverage
 _coverage/
+
+# Claude code files
+.claude/
