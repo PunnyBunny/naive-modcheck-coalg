@@ -45,3 +45,6 @@ _coverage/
 
 # Claude code files
 .claude/
+
+# Generated files
+generated/
