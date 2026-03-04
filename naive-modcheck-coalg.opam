@@ -14,6 +14,7 @@ depends: [
   "core"
   "ounit2"
   "zarith"
+  "yojson"
   "odoc" {with-doc}
 ]
 build: [

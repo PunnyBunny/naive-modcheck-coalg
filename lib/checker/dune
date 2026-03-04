@@ -1,5 +1,5 @@
 (library
  (name naive_modcheck_coalg_checker)
- (libraries core pgsolver naive_modcheck_coalg_common naive_modcheck_coalg_logics)
+ (libraries core pgsolver yojson naive_modcheck_coalg_common naive_modcheck_coalg_logics)
  (preprocess
   (pps ppx_jane)))

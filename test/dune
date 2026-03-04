@@ -1,9 +1,10 @@
 (tests
- (names test_naive_modcheck_coalg test_model_checking)
+ (names test_naive_modcheck_coalg test_model_checking test_visualiser)
  (libraries naive_modcheck_coalg_parsers
             naive_modcheck_coalg_logics
             naive_modcheck_coalg_common
             naive_modcheck_coalg_checker
             core
-            ounit2)
+            ounit2
+            yojson)
  (preprocess (pps ppx_jane)))
