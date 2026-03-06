@@ -51,7 +51,7 @@ let test_prob_case_1 _ =
     ~formula_str:"nu x . (p & <1/2 a> x)" ~point:"x"
     ~expected:true;
   check_prob ~model_str:prob_model_1
-    ~formula_str:"nu x . (~p & [1/2 b] ~x)" ~point:"x"
+    ~formula_str:"nu x . (~p & [1/2 b] x)" ~point:"x"
     ~expected:false
 
 let test_prob_case_2 _ =
@@ -59,7 +59,7 @@ let test_prob_case_2 _ =
     ~formula_str:"nu x . (p & <1/2 a> x)" ~point:"x"
     ~expected:true;
   check_prob ~model_str:prob_model_2
-    ~formula_str:"nu x . (~p & [1/2 b] ~x)" ~point:"x"
+    ~formula_str:"nu x . (~p & [1/2 b] x)" ~point:"x"
     ~expected:false
 
 (* ============================================================================ *)
