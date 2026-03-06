@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parity Game Visualiser</title>
+  <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            panel: '#f0f0f5',
+            surface: '#ffffff',
+            accent: '#e0e4eb',
+            highlight: '#c0c8d8',
+            eloise: '#2a9d6e',
+            abelard: '#d03030',
+            muted: '#666680',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Tailwind can't target Cytoscape's canvas, so keep minimal custom CSS */
+    .result-true {
+      color: #1a8a5a;
+      font-weight: bold;
+    }
+
+    .result-false {
+      color: #c02020;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body class="m-0 p-0 font-sans flex flex-col h-screen bg-surface text-gray-800">
+
+  <!-- Toolbar -->
+  <div id="toolbar" class="flex items-center gap-2.5 px-4 py-2 bg-panel border-b border-accent flex-wrap">
+    <label
+      class="bg-accent text-gray-700 border border-highlight px-3 py-1 rounded cursor-pointer text-sm hover:bg-highlight"
+      for="file-input">&#128194; Load JSON</label>
+    <input type="file" id="file-input" accept=".json" class="hidden">
+    <button id="btn-dagre" title="Hierarchical layout"
+      class="bg-accent text-gray-700 border border-highlight px-3 py-1 rounded cursor-pointer text-sm hover:bg-highlight">&#11015;
+      Dagre</button>
+    <button id="btn-cose" title="Force-directed layout"
+      class="bg-accent text-gray-700 border border-highlight px-3 py-1 rounded cursor-pointer text-sm hover:bg-highlight">&#128260;
+      CoSE</button>
+    <button id="btn-toggle-strat"
+      class="bg-accent text-gray-700 border border-highlight px-3 py-1 rounded cursor-pointer text-sm hover:bg-highlight">Strategy:
+      ON</button>
+    <button id="btn-toggle-non-strat"
+      class="bg-accent text-gray-700 border border-highlight px-3 py-1 rounded cursor-pointer text-sm hover:bg-highlight">Non-strategy:
+      ON</button>
+    <button id="btn-fit" title="Fit graph to viewport"
+      class="bg-accent text-gray-700 border border-highlight px-3 py-1 rounded cursor-pointer text-sm hover:bg-highlight">&#8862;
+      Fit</button>
+  </div>
+
+  <!-- Metadata bar -->
+  <div id="metadata" class="hidden px-4 py-2 bg-panel border-b border-accent text-xs">
+    <div class="flex gap-5 flex-wrap">
+      <div class="flex gap-1"><span class="text-muted">Logic:</span> <span
+          class="text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap"
+          id="meta-logic"></span></div>
+      <div class="flex gap-1"><span class="text-muted">Point:</span> <span
+          class="text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap"
+          id="meta-point"></span></div>
+      <div class="flex gap-1"><span class="text-muted">Result:</span> <span
+          class="text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap"
+          id="meta-result"></span></div>
+      <div class="flex gap-1"><span class="text-muted">Formula:</span><span
+          class="text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap"
+          id="meta-formula"></span></div>
+      <div class="flex gap-1"><span class="text-muted">Model:</span> <span
+          class="text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap"
+          id="meta-model"></span></div>
+    </div>
+  </div>
+
+  <!-- Graph + details -->
+  <div id="main" class="flex flex-1 overflow-hidden relative">
+    <div id="placeholder" class="flex-1 flex items-center justify-center text-gray-400 text-lg">Load a parity-game JSON
+      file to begin.</div>
+    <div id="cy" class="flex-1 hidden"></div>
+    <div id="legend"
+      class="hidden absolute top-3 left-3 bg-white/60 backdrop-blur-sm rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-600 pointer-events-auto transition-opacity duration-200 hover:opacity-20"
+      style="z-index: 10;">
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-center gap-1.5">
+          <div class="w-3.5 h-3.5 rounded-sm border border-gray-400 inline-block" style="background:#B5B5FF"></div>
+          Eloise
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-3.5 h-3.5 rounded-sm border border-gray-400 inline-block" style="background:#FFA8A8"></div>
+          Abelard
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-3.5 h-3.5 rounded-sm border-[3px] border-gray-500 bg-gray-200 inline-block"></div> Owner wins
+        </div>
+        <div class="flex items-center gap-1.5">
+          <svg class="inline-block" width="14" height="14" viewBox="0 0 14 14">
+            <polygon points="7,1.5 12.5,4.5 12.5,10 7,13 1.5,10 1.5,4.5" fill="#ddd" stroke="#666" stroke-width="1" />
+          </svg> Modal
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-4 h-0 border-t-[3px] border-[#2a9d6e] inline-block"></div> Strategy
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-4 h-0 border-t border-gray-400 inline-block opacity-50"></div> Non-strategy
+        </div>
+      </div>
+    </div>
+    <div id="details" class="hidden w-72 bg-panel border-l border-accent p-4 overflow-y-auto">
+      <h3 class="mb-3 text-gray-700 text-sm font-semibold">Node Details</h3>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">ID</div>
+        <div class="text-sm font-mono break-all" id="det-id">&mdash;</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Label</div>
+        <div class="text-sm font-mono break-all" id="det-label">&mdash;</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Owner</div>
+        <div class="text-sm font-mono break-all" id="det-owner">&mdash;</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Priority</div>
+        <div class="text-sm font-mono break-all" id="det-priority">&mdash;</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Winner</div>
+        <div class="text-sm font-mono break-all" id="det-winner">&mdash;</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">State(s)</div>
+        <div class="text-sm font-mono break-all" id="det-states">&mdash;</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Start Node</div>
+        <div class="text-sm font-mono break-all" id="det-start">&mdash;</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let cy = null;
+    let showStrategy = true;
+    let showNonStrategy = true;
+
+    const startSort = (a, b) => a.data('isStartMarker') ? -1 : b.data('isStartMarker') ? 1 : 0;
+    const dagreOpts = { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, sort: startSort };
+    const coseOpts = { name: 'cose', nodeRepulsion: () => 8000 };
+
+    /* ── File loading ───────────────────────────────── */
+    document.getElementById('file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          loadGame(data);
+        } catch (err) {
+          alert('Failed to parse JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    /* ── Build graph ────────────────────────────────── */
+    function loadGame(data) {
+      // Metadata
+      const meta = data.metadata || {};
+      document.getElementById('meta-logic').textContent = meta.logic || '\u2014';
+      document.getElementById('meta-point').textContent = meta.point || '\u2014';
+      const resEl = document.getElementById('meta-result');
+      resEl.textContent = meta.result != null ? String(meta.result) : '\u2014';
+      resEl.className = 'text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap ' + (meta.result ? 'result-true' : 'result-false');
+      const fmEl = document.getElementById('meta-formula');
+      fmEl.textContent = meta.formula || '\u2014';
+      fmEl.title = meta.formula || '';
+      const mdEl = document.getElementById('meta-model');
+      mdEl.textContent = meta.model || '\u2014';
+      mdEl.title = meta.model || '';
+      document.getElementById('metadata').classList.remove('hidden');
+
+      // Elements
+      const elements = [];
+      for (const node of data.nodes) {
+        const short = node.label.length > 50
+          ? node.label.slice(0, 47) + '\u2026' : node.label;
+        const states = node.states || [];
+        const stateStr = states.length === 1 ? states[0]
+          : '{' + states.join(', ') + '}';
+        elements.push({
+          data: {
+            id: 'n' + node.id,
+            label: short + ' @ ' + stateStr + ' | ' + node.priority,
+            fullLabel: node.label,
+            owner: node.owner,
+            priority: node.priority,
+            winner: node.winner,
+            isStart: node.isStart,
+            isModal: !!node.isModal,
+            ownerWins: node.owner === node.winner,
+            states: stateStr,
+          }
+        });
+      }
+      // Add a "Start" node pointing to the starting node
+      const startNode = data.nodes.find(n => n.isStart);
+      if (startNode) {
+        elements.push({
+          data: { id: '_start', label: 'Start', isStartMarker: true }
+        });
+        elements.push({
+          data: { id: '_start_edge', source: '_start', target: 'n' + startNode.id, isStrategy: false, isStartEdge: true }
+        });
+      }
+
+      for (let i = 0; i < data.edges.length; i++) {
+        const e = data.edges[i];
+        elements.push({
+          data: {
+            id: 'e' + i,
+            source: 'n' + e.source,
+            target: 'n' + e.target,
+            isStrategy: e.isStrategy,
+          }
+        });
+      }
+
+      // Show canvas, hide placeholder
+      document.getElementById('placeholder').classList.add('hidden');
+      document.getElementById('cy').classList.remove('hidden');
+      document.getElementById('details').classList.remove('hidden');
+      document.getElementById('legend').classList.remove('hidden');
+
+      // Cytoscape init
+      if (cy) cy.destroy();
+      cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: elements,
+        style: [
+          /* Base node */
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'font-size': '10px',
+              'color': '#333333',
+              'width': 'label',
+              'height': 'label',
+              'padding': '12px',
+              'background-color': '#f0f0fa',
+              'border-color': '#000000',
+              'border-width': 1,
+              'shape': 'round-rectangle',
+              'corner-radius': 5,
+            }
+          },
+          /* Eloise nodes – blue tint */
+          {
+            selector: 'node[owner="Eloise"]',
+            style: {
+              'background-color': '#B5B5FF',
+            }
+          },
+          /* Abelard nodes – red tint */
+          {
+            selector: 'node[owner="Abelard"]',
+            style: {
+              'background-color': '#FFA8A8',
+            }
+          },
+          /* Owner wins – thick border */
+          {
+            selector: 'node[?ownerWins]',
+            style: {
+              'border-width': 4,
+            }
+          },
+          /* Modal nodes – hexagonal */
+          {
+            selector: 'node[?isModal]',
+            style: {
+              'shape': 'round-hexagon',
+            }
+          },
+          /* Start marker node */
+          {
+            selector: 'node[?isStartMarker]',
+            style: {
+              'shape': 'round-rectangle',
+              'background-color': '#ffffff',
+              'border-width': 0,
+              'font-weight': 'bold',
+              'font-size': '12px',
+              'padding': '4px',
+            }
+          },
+          /* Start marker edge */
+          {
+            selector: 'edge[?isStartEdge]',
+            style: {
+              'width': 2,
+              'line-color': '#333',
+              'target-arrow-color': '#333',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'opacity': 1,
+              'arrow-scale': 1,
+            }
+          },
+          /* Non-strategy edges */
+          {
+            selector: 'edge[!isStrategy]',
+            style: {
+              'width': 1,
+              'line-color': '#bbb',
+              'target-arrow-color': '#bbb',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'opacity': 0.4,
+              'arrow-scale': 0.8,
+            }
+          },
+          /* Strategy edges */
+          {
+            selector: 'edge[?isStrategy]',
+            style: {
+              'width': 3,
+              'line-color': '#2a9d6e',
+              'target-arrow-color': '#2a9d6e',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'opacity': 1,
+              'arrow-scale': 1.2,
+            }
+          },
+        ],
+        layout: dagreOpts,
+        wheelSensitivity: 0.3,
+      });
+
+      // Node click
+      cy.on('tap', 'node', (evt) => {
+        const d = evt.target.data();
+        document.getElementById('det-id').textContent = d.id;
+        document.getElementById('det-label').textContent = d.fullLabel;
+        document.getElementById('det-owner').textContent = d.owner;
+        document.getElementById('det-priority').textContent = d.priority;
+        document.getElementById('det-winner').textContent = d.winner;
+        document.getElementById('det-states').textContent = d.states || '\u2014';
+        document.getElementById('det-start').textContent = d.isStart ? 'Yes' : 'No';
+      });
+
+      // Reset toggles
+      showStrategy = true;
+      showNonStrategy = true;
+      document.getElementById('btn-toggle-strat').textContent = 'Strategy: ON';
+      document.getElementById('btn-toggle-non-strat').textContent = 'Non-strategy: ON';
+    }
+
+    /* ── Layout buttons ─────────────────────────────── */
+    document.getElementById('btn-dagre').addEventListener('click', () => {
+      if (cy) cy.layout({ ...dagreOpts, animate: true }).run();
+    });
+    document.getElementById('btn-cose').addEventListener('click', () => {
+      if (cy) cy.layout({ ...coseOpts, animate: true }).run();
+    });
+    document.getElementById('btn-fit').addEventListener('click', () => {
+      if (cy) cy.fit(null, 30);
+    });
+
+    /* ── Toggle buttons ─────────────────────────────── */
+    document.getElementById('btn-toggle-strat').addEventListener('click', () => {
+      showStrategy = !showStrategy;
+      document.getElementById('btn-toggle-strat').textContent =
+        'Strategy: ' + (showStrategy ? 'ON' : 'OFF');
+      if (cy) cy.edges('[?isStrategy]').style('display', showStrategy ? 'element' : 'none');
+    });
+    document.getElementById('btn-toggle-non-strat').addEventListener('click', () => {
+      showNonStrategy = !showNonStrategy;
+      document.getElementById('btn-toggle-non-strat').textContent =
+        'Non-strategy: ' + (showNonStrategy ? 'ON' : 'OFF');
+      if (cy) cy.edges('[!isStrategy]').style('display', showNonStrategy ? 'element' : 'none');
+    });
+  </script>
+</body>
+
+</html>
