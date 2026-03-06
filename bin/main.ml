@@ -42,49 +42,28 @@ let read_source ~label ~inline ~file =
 
 (* ── Model-checking dispatch ──────────────────────────────────────────────── *)
 
-let run_relational ~verbose ~model_src ~formula_src ~point_str =
+let run_logic ~(packed : packed_logic) ~verbose ~visualise ~model_src
+    ~formula_src ~point_str =
+  let logic_name = name packed in
   let point = State.of_string point_str in
-  let model =
-    try Logics.Relational.parse_model model_src
+  let game_data =
+    try run packed ~verbose ~model_src ~formula_src ~point
     with exn ->
       print_error
-        (sprintf "Failed to parse relational model: %s" (Exn.to_string exn));
+        (sprintf "Failed to run %s model checking: %s" logic_name
+           (Exn.to_string exn));
       exit 1
   in
-  let formula_ast =
-    try Logics.Relational.parse_formula formula_src
-    with exn ->
-      print_error
-        (sprintf "Failed to parse relational formula: %s" (Exn.to_string exn));
-      exit 1
-  in
-  let formula = Logics.Relational.formula_of_ast formula_ast in
-  let result =
-    Checkers.Relational.model_check ~verbose ~model ~point ~formula
-  in
-  print_result ~logic:"relational" ~point ~result
-
-let run_probabilistic ~verbose ~model_src ~formula_src ~point_str =
-  let point = State.of_string point_str in
-  let model =
-    try Logics.Probabilistic.parse_model model_src
-    with exn ->
-      print_error
-        (sprintf "Failed to parse probabilistic model: %s" (Exn.to_string exn));
-      exit 1
-  in
-  let formula_ast =
-    try Logics.Probabilistic.parse_formula formula_src
-    with exn ->
-      print_error
-        (sprintf "Failed to parse probabilistic formula: %s" (Exn.to_string exn));
-      exit 1
-  in
-  let formula = Logics.Probabilistic.formula_of_ast formula_ast in
-  let result =
-    Checkers.Probabilistic.model_check ~verbose ~model ~point ~formula
-  in
-  print_result ~logic:"probabilistic" ~point ~result
+  (match visualise with
+  | Some path ->
+      let path = resolve_visualise_path ~logic:logic_name path in
+      let json =
+        Game_export.export_json ~game_data ~model_src ~formula_src
+          ~logic:logic_name ~point:point_str
+      in
+      Game_export.to_file ~path json
+  | None -> ());
+  print_result ~logic:logic_name ~point ~result:game_data.result
 
 (* ── CLI definition ───────────────────────────────────────────────────────── *)
 
@@ -172,15 +151,13 @@ let check_cmd =
           print_error e;
           exit 1
     in
-    match logic with
-    | "relational" ->
-        run_relational ~verbose ~model_src ~formula_src ~point_str:point
-    | "probabilistic" ->
-        run_probabilistic ~verbose ~model_src ~formula_src ~point_str:point
-    | other ->
-        print_error
-          (sprintf "Unknown logic %S. Choose 'relational' or 'probabilistic'."
-             other);
+    match find_logic logic with
+    | Some packed ->
+        run_logic ~packed ~verbose ~visualise ~model_src ~formula_src
+          ~point_str:point
+    | None ->
+        let known = known_names () |> String.concat ~sep:", " in
+        print_error (sprintf "Unknown logic %S. Choose one of: %s." logic known);
         exit 1
   in
 
