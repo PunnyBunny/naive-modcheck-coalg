@@ -1,7 +1,8 @@
 open! Core
 open Naive_modcheck_coalg_common
-open Naive_modcheck_coalg_checker
-open Naive_modcheck_coalg_logics
+open Naive_modcheck_coalg_export
+open Naive_modcheck_coalg_registry
+open Cmdliner
 
 (* ── Output helpers ────────────────────────────────────────────────────────── *)
 
@@ -16,6 +17,17 @@ let print_error msg =
   [%sexp { error : string = msg }] |> Sexp.to_string_hum |> prerr_endline
 
 (* ── I/O helpers ──────────────────────────────────────────────────────────── *)
+
+let default_visualiser_filename ~logic =
+  let time =
+    Time_ns.now () |> Time_ns.to_filename_string ~zone:Time_float.Zone.utc
+  in
+  sprintf "parity-game-%s-%s.json" logic time
+
+let resolve_visualise_path ~logic path =
+  if Stdlib.Sys.is_directory path then
+    Filename.concat path (default_visualiser_filename ~logic)
+  else path
 
 (** Resolve an inline string vs. a file path, requiring exactly one. *)
 let read_source ~label ~inline ~file =
@@ -77,12 +89,11 @@ let run_probabilistic ~verbose ~model_src ~formula_src ~point_str =
 (* ── CLI definition ───────────────────────────────────────────────────────── *)
 
 let check_cmd =
-  let open Cmdliner in
   (* Arguments *)
   let logic =
+    let known = known_names () |> String.concat ~sep:", " in
     let doc =
-      "Logic to use for model checking. Must be $(b,relational) or \
-       $(b,probabilistic)."
+      sprintf "Logic to use for model checking. Must be one of: %s." known
     in
     Arg.(
       required & opt (some string) None & info [ "logic" ] ~docv:"LOGIC" ~doc)
@@ -128,10 +139,21 @@ let check_cmd =
     let doc = "Print verbose parity-game solving output." in
     Arg.(value & flag & info [ "verbose"; "v" ] ~doc)
   in
+  let visualise =
+    let doc =
+      "Export the solved parity game as JSON to $(docv) for use with the web \
+       viewer. If $(docv) is a directory, writes to parity-game.json inside \
+       it."
+    in
+    Arg.(
+      value
+      & opt (some string) None
+      & info [ "visualise"; "V" ] ~docv:"PATH" ~doc)
+  in
 
   (* Main action *)
   let action logic model_inline model_file formula_inline formula_file point
-      verbose =
+      verbose visualise =
     let model_src =
       match
         read_source ~label:"model" ~inline:model_inline ~file:model_file
@@ -218,6 +240,7 @@ a mu-calculus formula using coalgebraic parity-game reduction.|}
   Cmd.v info
     Term.(
       const action $ logic $ model_inline $ model_file $ formula_inline
-      $ formula_file $ point $ verbose)
+      $ formula_file $ point $ verbose $ visualise)
 
-let () = exit (Cmdliner.Cmd.eval check_cmd)
+let main () = Cmdliner.Cmd.eval check_cmd
+let () = exit (main ())

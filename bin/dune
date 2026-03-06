@@ -1,6 +1,6 @@
 (executable
  (public_name naive-modcheck-coalg)
  (name main)
- (libraries pgsolver naive_modcheck_coalg_common naive_modcheck_coalg_logics naive_modcheck_coalg_parsers naive_modcheck_coalg_checker naive_modcheck_coalg_registry core cmdliner)
+ (libraries pgsolver naive_modcheck_coalg_common naive_modcheck_coalg_logics naive_modcheck_coalg_parsers naive_modcheck_coalg_checker naive_modcheck_coalg_export naive_modcheck_coalg_registry core cmdliner)
  (preprocess (pps ppx_jane)))
 

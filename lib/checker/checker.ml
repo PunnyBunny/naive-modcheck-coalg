@@ -30,6 +30,11 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
         let ps = powerset xs in
         ps @ List.map ps ~f:(fun subset -> x :: subset)
 
+  let pretty_print_formula node =
+    match node with
+    | FormulaNode (formula, _) | ModalNode (formula, _) ->
+        Logic.Formula.pretty_print formula
+
   (* Build parity game from model and formula *)
   let build_game ~(model : Logic.Model.t) ~(point : State.t)
       ~(formula : Logic.Formula.t) : game =
@@ -134,13 +139,12 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     build_formula_node formula point;
     game
 
-  (* Convert node to string for debugging *)
-  let string_of_node (node : node) : string = Sexp.to_string (sexp_of_node node)
-
-  (* Solve the parity game using PGSolver *)
-  let solve_game ~verbose (game : game) (starting_node : node) : bool =
+  (* Solve the parity game using PGSolver, returning full game data *)
+  let solve_game_internal ~verbose (game : game) (starting_node : node) :
+      Checker_intf.game_data =
     let node_keys = Hashtbl.keys game |> List.of_list in
     let node_key_array = Array.of_list node_keys in
+    let n = Array.length node_key_array in
 
     let key_to_index =
       List.mapi node_keys ~f:(fun i node -> (node, i))
@@ -148,7 +152,7 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
     in
 
     let pgsolver_parity_game =
-      Paritygame.pg_init (Array.length node_key_array) (fun i ->
+      Paritygame.pg_init n (fun i ->
           let node = node_key_array.(i) in
           let owner, priority, successors = Hashtbl.find_exn game node in
 
@@ -163,7 +167,10 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
             | Abelard -> Paritygame.plr_Odd
           in
 
-          (priority, owner_idx, successor_indices, Some (string_of_node node)))
+          ( priority,
+            owner_idx,
+            successor_indices,
+            Some (sexp_of_node node |> Sexp.to_string) ))
     in
 
     let solution, strategy = Recursive.solve pgsolver_parity_game in
@@ -176,13 +183,65 @@ module Make (L : Logic.S) : Checker_intf.S with module Logic = L = struct
       printf "[Strategy]\n%s\n\n" (Paritygame.format_strategy strategy);
       printf "\n[Winner]: %s\n%!"
         (if Poly.(winner = Paritygame.plr_Even) then "Eloise" else "Abelard"));
-    Poly.(winner = Paritygame.plr_Even)
 
-  (* Main model checking entry point *)
-  let model_check ~verbose ~(model : Logic.Model.t) ~(point : State.t)
-      ~(formula : Logic.Formula.t) : bool =
+    let result = Poly.(winner = Paritygame.plr_Even) in
+    let node_labels = Array.map node_key_array ~f:pretty_print_formula in
+    let node_owners =
+      Array.map node_key_array ~f:(fun node ->
+          let owner, _, _ = Hashtbl.find_exn game node in
+          match owner with Eloise -> "Eloise" | Abelard -> "Abelard")
+    in
+    let node_priorities =
+      Array.map node_key_array ~f:(fun node ->
+          let _, priority, _ = Hashtbl.find_exn game node in
+          priority)
+    in
+    let node_successors =
+      Array.init n ~f:(fun i ->
+          let node = node_key_array.(i) in
+          let _, _, succs = Hashtbl.find_exn game node in
+          List.map succs ~f:(fun s -> Hashtbl.find_exn key_to_index s))
+    in
+    let winners =
+      Array.map solution ~f:(fun plr ->
+          if Poly.(plr = Paritygame.plr_Even) then "Eloise" else "Abelard")
+    in
+    let strategy_arr =
+      Array.map strategy ~f:(fun s -> if s >= 0 then Some s else None)
+    in
+    let node_is_modal =
+      Array.map node_key_array ~f:(fun node ->
+          match node with ModalNode _ -> true | _ -> false)
+    in
+    let node_states =
+      Array.map node_key_array ~f:(fun node ->
+          match node with
+          | FormulaNode (_, state) -> [ State.to_string state ]
+          | ModalNode (_, states) -> List.map states ~f:State.to_string)
+    in
+    {
+      Checker_intf.num_nodes = n;
+      node_labels;
+      node_owners;
+      node_priorities;
+      node_successors;
+      winners;
+      strategy = strategy_arr;
+      node_is_modal;
+      node_states;
+      starting_node = starting_index;
+      result;
+    }
+
+  (* Main model checking entry point — returns full game data *)
+  let model_check_full ~verbose ~(model : Logic.Model.t) ~(point : State.t)
+      ~(formula : Logic.Formula.t) : Checker_intf.game_data =
     let game = build_game ~model ~point ~formula in
     let starting_node = FormulaNode (formula, point) in
+    solve_game_internal ~verbose game starting_node
 
-    solve_game ~verbose game starting_node
+  (* Main model checking entry point — returns bool *)
+  let model_check ~verbose ~(model : Logic.Model.t) ~(point : State.t)
+      ~(formula : Logic.Formula.t) : bool =
+    (model_check_full ~verbose ~model ~point ~formula).result
 end

@@ -4,6 +4,8 @@ module Parsers = Naive_modcheck_coalg_parsers
 
 module Probabilistic_formula = Formula_intf.Make (struct
   type t = Frac.t [@@deriving sexp]
+
+  let to_string frac = Frac.to_string frac
 end)
 
 module Probabilistic_model = Model_intf.Make (struct

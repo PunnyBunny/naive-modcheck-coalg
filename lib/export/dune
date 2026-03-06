@@ -1,0 +1,5 @@
+(library
+ (name naive_modcheck_coalg_export)
+ (libraries core yojson naive_modcheck_coalg_checker)
+ (preprocess
+  (pps ppx_jane)))

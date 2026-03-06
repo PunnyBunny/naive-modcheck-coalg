@@ -3,6 +3,8 @@ open Naive_modcheck_coalg_common
 
 module Relational_formula = Formula_intf.Make (struct
   type t = unit [@@deriving sexp]
+
+  let to_string () = ""
 end)
 
 module Relational_model = Model_intf.Make (struct

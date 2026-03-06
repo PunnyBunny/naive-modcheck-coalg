@@ -20,3 +20,4 @@ let compare = Q.compare
 let ( + ) = Q.add
 let ( >= ) a b = Q.compare a b >= 0
 let ( > ) a b = Q.compare a b > 0
+let to_string = Q.to_string

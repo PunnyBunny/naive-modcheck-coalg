@@ -71,9 +71,9 @@ module Make (Spec : LOGIC_SPECIFICATION) :
           build_theta_table f1;
           build_theta_table f2
       | Diamond (_, _, f) | Box (_, _, f) -> build_theta_table f
-      | Mu (v, f) | Nu (v, f) ->
+      | (Mu (v, f') | Nu (v, f')) as f ->
           Hashtbl.set theta_table ~key:v ~data:f;
-          build_theta_table f
+          build_theta_table f'
     in
     build_theta_table formula;
     fun v -> Hashtbl.find theta_table v
