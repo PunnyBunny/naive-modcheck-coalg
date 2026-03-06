@@ -1,2 +1,13 @@
 profile = default
 version = 0.28.1
+break-cases = all
+break-fun-decl = wrap
+break-fun-sig = wrap
+break-separators = before
+break-sequences = true
+break-struct = force
+margin = 60
+space-around-arrays = true
+space-around-lists = true
+space-around-records = true
+space-around-variants = true

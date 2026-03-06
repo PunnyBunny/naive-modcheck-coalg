@@ -8,7 +8,11 @@ let zero = Q.zero
 let sexp_of_t q =
   let n = Z.to_int (Q.num q) in
   let d = Z.to_int (Q.den q) in
-  Sexp.List [ Sexp.Atom (Int.to_string n); Sexp.Atom (Int.to_string d) ]
+  Sexp.List
+    [
+      Sexp.Atom (Int.to_string n)
+    ; Sexp.Atom (Int.to_string d)
+    ]
 
 let t_of_sexp sexp =
   match sexp with

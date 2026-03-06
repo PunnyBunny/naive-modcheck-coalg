@@ -13,7 +13,8 @@ module Probabilistic_ast = struct
   type frac = Frac.t [@@deriving sexp]
 
   include Model_intf.Make (struct
-    type t = (State.t, frac) Hashtbl.Poly.t [@@deriving sexp]
+    type t = (State.t, frac) Hashtbl.Poly.t
+    [@@deriving sexp]
   end)
 end
 

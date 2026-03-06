@@ -17,27 +17,33 @@ module M :
      and type transition = State.t list
      and module Model = Relational_model
      and module Formula = Relational_formula
-     and module Formula_ast = Naive_modcheck_coalg_parsers.Formula.Ast
+     and module Formula_ast = Naive_modcheck_coalg_parsers
+                              .Formula
+                              .Ast
                               .Relational_ast = struct
   type modality = unit [@@deriving sexp]
   type transition = State.t list [@@deriving sexp]
 
   module Model = Relational_model
   module Formula = Relational_formula
-  module Formula_ast = Naive_modcheck_coalg_parsers.Formula.Ast.Relational_ast
+
+  module Formula_ast =
+    Naive_modcheck_coalg_parsers.Formula.Ast.Relational_ast
 
   let next_states model state action =
     match Hashtbl.find model state with
     | None -> []
     | Some (_, transitions) ->
-        if Action.is_empty action then Hashtbl.data transitions |> List.concat
+        if Action.is_empty action then
+          Hashtbl.data transitions |> List.concat
         else
           Hashtbl.find transitions action
           |> Option.value_exn ~message:"No transition found"
 
   let one_step_satisfaction ~(model : Model.t)
-      ~(box_or_diamond : [ `Box | `Diamond ]) ~(state : State.t)
-      ~(states : State.t list) ~(action : Action.t) =
+      ~(box_or_diamond : [ `Box | `Diamond ])
+      ~(state : State.t) ~(states : State.t list)
+      ~(action : Action.t) =
     let successors = next_states model state action in
     match box_or_diamond with
     | `Diamond ->
@@ -48,9 +54,12 @@ module M :
             List.mem states s ~equal:State.equal)
 
   let parse_formula =
-    Naive_modcheck_coalg_parsers.Formula.parse_relational_formula
+    Naive_modcheck_coalg_parsers.Formula
+    .parse_relational_formula
 
-  let parse_model = Naive_modcheck_coalg_parsers.Model.parse_relational_model
+  let parse_model =
+    Naive_modcheck_coalg_parsers.Model
+    .parse_relational_model
 end
 
 include Logic.Make (M)

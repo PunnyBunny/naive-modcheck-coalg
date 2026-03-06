@@ -16,22 +16,26 @@ module Make (Spec : LOGIC_SPECIFICATION) :
   module Formula = Spec.Formula
   module Formula_ast = Spec.Formula_ast
 
-  (** Convert AST to NNF formula by pushing negations inward *)
+  (** Convert AST to NNF formula by pushing negations inward
+  *)
   let rec formula_of_ast (ast : Formula_ast.t) : Formula.t =
     match ast with
     | True -> True
     | False -> False
     | Ap p -> Ap p
     | Var x -> Var x
-    | And (f1, f2) -> And (formula_of_ast f1, formula_of_ast f2)
-    | Or (f1, f2) -> Or (formula_of_ast f1, formula_of_ast f2)
+    | And (f1, f2) ->
+        And (formula_of_ast f1, formula_of_ast f2)
+    | Or (f1, f2) ->
+        Or (formula_of_ast f1, formula_of_ast f2)
     | Diamond (a, m, f) -> Diamond (a, m, formula_of_ast f)
     | Box (a, m, f) -> Box (a, m, formula_of_ast f)
     | Mu (x, f) -> Mu (x, formula_of_ast f)
     | Nu (x, f) -> Nu (x, formula_of_ast f)
     | Not f -> negate (formula_of_ast f)
 
-  (** Negate a formula, pushing the negation inward to maintain NNF *)
+  (** Negate a formula, pushing the negation inward to
+      maintain NNF *)
   and negate (f : Formula.t) : Formula.t =
     match f with
     | True -> False
@@ -47,14 +51,14 @@ module Make (Spec : LOGIC_SPECIFICATION) :
     | Nu (x, f) -> Mu (x, negate f)
 
   type helper_functions = {
-    theta : Var.t -> Formula.t option;
-    alternation_depth : Var.t -> int option;
+      theta : Var.t -> Formula.t option
+    ; alternation_depth : Var.t -> int option
   }
 
   let one_step_satisfaction = Spec.one_step_satisfaction
 
-  let is_atom_in_state ~(model : Model.t) ~(state : State.t) ~(atom : Ap.t) :
-      bool =
+  let is_atom_in_state ~(model : Model.t) ~(state : State.t)
+      ~(atom : Ap.t) : bool =
     match Hashtbl.find model state with
     | None -> false
     | Some (atoms, _) -> List.mem atoms atom ~equal:Ap.equal
@@ -65,12 +69,19 @@ module Make (Spec : LOGIC_SPECIFICATION) :
   let get_theta formula =
     let theta_table = Hashtbl.Poly.create () in
     let rec build_theta_table : Formula.t -> unit = function
-      | True | False | Ap _ | Not _ -> ()
+      | True
+      | False
+      | Ap _
+      | Not _ ->
+          ()
       | Var _ -> ()
-      | And (f1, f2) | Or (f1, f2) ->
+      | And (f1, f2)
+      | Or (f1, f2) ->
           build_theta_table f1;
           build_theta_table f2
-      | Diamond (_, _, f) | Box (_, _, f) -> build_theta_table f
+      | Diamond (_, _, f)
+      | Box (_, _, f) ->
+          build_theta_table f
       | (Mu (v, f') | Nu (v, f')) as f ->
           Hashtbl.set theta_table ~key:v ~data:f;
           build_theta_table f'
@@ -81,18 +92,33 @@ module Make (Spec : LOGIC_SPECIFICATION) :
   let get_alternation_depth formula =
     let alternation_depth_table = Hashtbl.Poly.create () in
     let rec build_table : Formula.t -> int = function
-      | True | False | Ap _ | Not _ | Var _ -> 0
-      | And (f1, f2) | Or (f1, f2) -> Int.max (build_table f1) (build_table f2)
-      | Diamond (_, _, f) | Box (_, _, f) -> build_table f
+      | True
+      | False
+      | Ap _
+      | Not _
+      | Var _ ->
+          0
+      | And (f1, f2)
+      | Or (f1, f2) ->
+          Int.max (build_table f1) (build_table f2)
+      | Diamond (_, _, f)
+      | Box (_, _, f) ->
+          build_table f
       | Mu (v, f) ->
           let depth = build_table f in
-          let new_depth = if depth mod 2 = 0 then depth + 1 else depth in
-          Hashtbl.set alternation_depth_table ~key:v ~data:new_depth;
+          let new_depth =
+            if depth mod 2 = 0 then depth + 1 else depth
+          in
+          Hashtbl.set alternation_depth_table ~key:v
+            ~data:new_depth;
           new_depth
       | Nu (v, f) ->
           let depth = build_table f in
-          let new_depth = if depth mod 2 = 1 then depth + 1 else depth in
-          Hashtbl.set alternation_depth_table ~key:v ~data:new_depth;
+          let new_depth =
+            if depth mod 2 = 1 then depth + 1 else depth
+          in
+          Hashtbl.set alternation_depth_table ~key:v
+            ~data:new_depth;
           new_depth
     in
     ignore (build_table formula);
@@ -100,8 +126,8 @@ module Make (Spec : LOGIC_SPECIFICATION) :
 
   let get_helper_functions formula =
     {
-      theta = get_theta formula;
-      alternation_depth = get_alternation_depth formula;
+      theta = get_theta formula
+    ; alternation_depth = get_alternation_depth formula
     }
 
   let parse_formula = Spec.parse_formula
