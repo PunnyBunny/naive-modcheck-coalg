@@ -1,8 +1,5 @@
 open! Core
 
-(** Export a solved parity game as JSON for the web viewer.
-*)
-
 let export_json
     ~(game_data :
        Naive_modcheck_coalg_checker.Checker_intf.game_data)

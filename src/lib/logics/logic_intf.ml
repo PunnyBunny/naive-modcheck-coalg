@@ -5,7 +5,7 @@ open Naive_modcheck_coalg_common
 module type S = sig
   type modality [@@deriving sexp]
   type transition [@@deriving sexp]
-
+ 
   module Model :
     Model_intf.S with type transition = transition
 
