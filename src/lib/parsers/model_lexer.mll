@@ -6,7 +6,7 @@ let al = ['a'-'z''A'-'Z']
 let num = ['0'-'9']
 let alnum = (al|num)+
 let int = '-'?num+
-let id = (['a'-'z'](alnum | '_')*)|('{''}') (* to support models from mcrl2 idetifieers need to contain spechial characters *)
+let id = ['a'-'z'](alnum | '_')* (* to support models from mcrl2 idetifieers need to contain spechial characters *)
 
 rule lex = parse
 	  | [' ' '\t']+ { lex lexbuf }
