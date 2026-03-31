@@ -9,6 +9,10 @@ end)
 
 module Relational_model = Model_intf.Make (struct
   type t = State.t list [@@deriving sexp]
+
+  let to_string states =
+    let inner = String.concat ~sep:", " (List.map ~f:State.to_string states) in
+    {%string|{%{inner}}|}
 end)
 
 module M :
@@ -30,6 +34,7 @@ module M :
   module Formula_ast =
     Naive_modcheck_coalg_parsers.Formula.Ast.Relational_ast
 
+  (* TODO: move into interface *)
   let next_states model state action =
     match Hashtbl.find model state with
     | None -> []

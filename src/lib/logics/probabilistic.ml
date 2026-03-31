@@ -11,6 +11,17 @@ end)
 module Probabilistic_model = Model_intf.Make (struct
   type t = (State.t, Frac.t) Hashtbl.Poly.t
   [@@deriving sexp]
+
+  let to_string transitions =
+    let entries =
+      Hashtbl.Poly.fold transitions ~init:[]
+        ~f:(fun ~key:state ~data:prob acc ->
+          let state = State.to_string state in
+          let prob = Frac.to_string prob in
+          {%string|%{state}: %{prob}|} :: acc)
+    in
+    let inner = String.concat ~sep:", " entries in
+    {%string|[%{inner}]|}
 end)
 
 module M :
