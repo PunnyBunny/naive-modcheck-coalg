@@ -48,3 +48,6 @@ _coverage/
 
 # Generated files
 generated/
+
+# Python cache files
+__pycache__/
