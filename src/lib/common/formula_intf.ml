@@ -58,12 +58,12 @@ end) : S with type modality = M.t = struct
         "(" ^ pretty_print f1 ^ " ∨ " ^ pretty_print f2
         ^ ")"
     | Diamond (action, modality, subfmla) ->
-        "⟨"
+        "<"
         ^ (if Action.to_string action |> String.is_empty
            then ""
            else Action.to_string action ^ ", ")
         ^ M.to_string modality
-        ^ "⟩"
+        ^ ">"
         ^ pretty_print subfmla
     | Box (action, modality, subfmla) ->
         "["
