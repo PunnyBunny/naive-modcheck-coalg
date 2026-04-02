@@ -1,0 +1,2 @@
+(* k_game: 4-state game model. <> and [] use empty action, merging all transitions. *)
+K ; mu x4 . nu x3 . mu x2 . nu x1 . ((e & ((p1 & <> x1) | (p2 & <> x2) | (p3 & <> x3) | (p4 & <> x4))) | (a & ((p1 & [] x1) | (p2 & [] x2) | (p3 & [] x3) | (p4 & [] x4)))) ; s1 ; true

@@ -1,5 +1,6 @@
 (tests
  (names test_naive_modcheck_coalg test_model_checking test_game_export test_pretty_print)
+ (deps (source_tree data))
  (libraries naive_modcheck_coalg_parsers
             naive_modcheck_coalg_logics
             naive_modcheck_coalg_common

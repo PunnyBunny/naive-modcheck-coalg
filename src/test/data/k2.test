@@ -1,0 +1,9 @@
+(* k2: 2-state K model with p1/p2. Line 1 is direct mu-calculus; rest are CTL translations. *)
+K ; nu x2 . (mu x1 . ((p1 & <> x1) | (p2 & [] x2))) ; x ; true
+K ; nu z . (p1 & <> z) ; x ; true
+K ; nu z . (p2 & <> z) ; y ; true
+K ; nu z . ((p1 | p2) & [] z) ; x ; true
+K ; nu z . ((p1 | p2) & [] z) ; y ; true
+K ; mu z . ((p1 | p2) | [] z) ; x ; true
+K ; mu z . ((p1 & p2) | [] z) ; x ; false
+K ; nu z2 . ((mu z1 . ((p1 | p2) | [] z1)) & [] z2) ; x ; true

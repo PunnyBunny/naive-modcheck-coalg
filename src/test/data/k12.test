@@ -1,0 +1,6 @@
+(* k12: 28-state K model. CTL formulas translated to mu-calculus. *)
+K ; nu z . (p & [] z) ; x1 ; false
+K ; nu z . (p & <> z) ; x1 ; false
+K ; mu z . (p | <> z) ; x1 ; true
+K ; nu z . (~p & <> z) ; x1 ; true
+K ; nu z . (~p & [] z) ; x1 ; false

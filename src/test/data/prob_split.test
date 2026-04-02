@@ -1,0 +1,2 @@
+PML ; nu x . (p & <1/2 a> x) ; x ; true
+PML ; nu x . (~p & [1/2 b] x) ; x ; false

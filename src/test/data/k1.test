@@ -1,0 +1,6 @@
+(* k1: simple 2-state K model. CTL formulas translated to mu-calculus. *)
+K ; nu x1 . (p & [] x1) ; x ; false
+K ; nu x1 . (p & <> x1) ; x ; false
+K ; mu x1 . (p | <> x1) ; x ; true
+K ; nu x1 . (~p & <> x1) ; x ; true
+K ; nu x1 . (~p & [] x1) ; x ; false
