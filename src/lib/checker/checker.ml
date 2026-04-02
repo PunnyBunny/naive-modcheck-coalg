@@ -139,7 +139,8 @@ module Make (L : Logic.S) :
               List.map satisfying_sets ~f:(fun states ->
                   ModalNode (sub_fmla, states))
             in
-            add_node Abelard 0 modal_nodes;
+            add_node Eloise 0 modal_nodes;
+            (* This was wrong, can be put into dissertation *)
             List.iter satisfying_sets ~f:(fun states ->
                 build_modal_node sub_fmla states)
     (*  (* Use only the minimal Box-satisfying set (intersection of all satisfying
