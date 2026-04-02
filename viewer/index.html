@@ -120,34 +120,47 @@
       </div>
     </div>
     <div id="details" class="hidden w-72 bg-panel border-l border-accent p-4 overflow-y-auto">
-      <h3 class="mb-3 text-gray-700 text-sm font-semibold">Node Details</h3>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-gray-700 text-sm font-semibold">Node Details</h3>
+        <button id="btn-focus-node" title="Focus node in graph"
+          class="text-xs px-2 py-1 rounded bg-accent border border-highlight hover:bg-highlight disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled>&#8982; Focus</button>
+      </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">ID</div>
-        <div class="text-sm font-mono break-all" id="det-id">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-id">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Label</div>
-        <div class="text-sm font-mono break-all" id="det-label">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-label">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Owner</div>
-        <div class="text-sm font-mono break-all" id="det-owner">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-owner">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Priority</div>
-        <div class="text-sm font-mono break-all" id="det-priority">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-priority">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Winner</div>
-        <div class="text-sm font-mono break-all" id="det-winner">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-winner">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">State(s)</div>
-        <div class="text-sm font-mono break-all" id="det-states">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-states">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Start Node</div>
-        <div class="text-sm font-mono break-all" id="det-start">&mdash;</div>
+        <div class="text-sm font-mono break-all" id="det-start">N/A</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Parents</div>
+        <div id="det-parents" class="flex flex-col gap-1 mt-1"></div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">Successors</div>
+        <div id="det-successors" class="flex flex-col gap-1 mt-1"></div>
       </div>
     </div>
   </div>
@@ -156,10 +169,11 @@
     let cy = null;
     let showStrategy = true;
     let showNonStrategy = true;
+    let selectedNodeId = null;
 
     const startSort = (a, b) => a.data('isStartMarker') ? -1 : b.data('isStartMarker') ? 1 : 0;
-    const dagreOpts = { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, sort: startSort };
-    const coseOpts = { name: 'cose', nodeRepulsion: () => 8000 };
+    const dagreOpts = { name: 'dagre', rankDir: 'TB', nodeSep: 20, rankSep: 30, sort: startSort };
+    const coseOpts = { name: 'cose', nodeRepulsion: () => 6000 };
 
     /* ── File loading ───────────────────────────────── */
     document.getElementById('file-input').addEventListener('change', (e) => {
@@ -181,31 +195,29 @@
     function loadGame(data) {
       // Metadata
       const meta = data.metadata || {};
-      document.getElementById('meta-logic').textContent = meta.logic || '\u2014';
-      document.getElementById('meta-point').textContent = meta.point || '\u2014';
+      document.getElementById('meta-logic').textContent = meta.logic || 'N/A';
+      document.getElementById('meta-point').textContent = meta.point || 'N/A';
       const resEl = document.getElementById('meta-result');
-      resEl.textContent = meta.result != null ? String(meta.result) : '\u2014';
+      resEl.textContent = meta.result != null ? String(meta.result) : 'N/A';
       resEl.className = 'text-gray-800 font-mono max-w-[500px] overflow-hidden text-ellipsis whitespace-nowrap ' + (meta.result ? 'result-true' : 'result-false');
       const fmEl = document.getElementById('meta-formula');
-      fmEl.textContent = meta.formula || '\u2014';
+      fmEl.textContent = meta.formula || 'N/A';
       fmEl.title = meta.formula || '';
       const mdEl = document.getElementById('meta-model');
-      mdEl.textContent = meta.model || '\u2014';
+      mdEl.textContent = meta.model || 'N/A';
       mdEl.title = meta.model || '';
       document.getElementById('metadata').classList.remove('hidden');
 
       // Elements
       const elements = [];
       for (const node of data.nodes) {
-        const short = node.label.length > 50
-          ? node.label.slice(0, 47) + '\u2026' : node.label;
         const states = node.states || [];
         const stateStr = states.length === 1 ? states[0]
           : '{' + states.join(', ') + '}';
         elements.push({
           data: {
             id: 'n' + node.id,
-            label: short + ' @ ' + stateStr + ' | ' + node.priority,
+            label: node.label + ' @ ' + stateStr + ' | ' + node.priority,
             fullLabel: node.label,
             owner: node.owner,
             priority: node.priority,
@@ -259,7 +271,7 @@
               'label': 'data(label)',
               'text-valign': 'center',
               'text-halign': 'center',
-              'font-size': '10px',
+              'font-size': '16px',
               'color': '#333333',
               'width': 'label',
               'height': 'label',
@@ -357,22 +369,66 @@
 
       // Node click
       cy.on('tap', 'node', (evt) => {
-        const d = evt.target.data();
+        const node = evt.target;
+        const d = node.data();
+        selectedNodeId = d.id;
+        document.getElementById('btn-focus-node').disabled = false;
         document.getElementById('det-id').textContent = d.id;
-        document.getElementById('det-label').textContent = d.fullLabel;
-        document.getElementById('det-owner').textContent = d.owner;
-        document.getElementById('det-priority').textContent = d.priority;
-        document.getElementById('det-winner').textContent = d.winner;
-        document.getElementById('det-states').textContent = d.states || '\u2014';
+        document.getElementById('det-label').textContent = d.fullLabel || 'N/A';
+        document.getElementById('det-owner').textContent = d.owner || 'N/A';
+        document.getElementById('det-priority').textContent = d.priority != null ? d.priority : 'N/A';
+        document.getElementById('det-winner').textContent = d.winner || 'N/A';
+        document.getElementById('det-states').textContent = d.states || 'N/A';
         document.getElementById('det-start').textContent = d.isStart ? 'Yes' : 'No';
+        populateNeighbourButtons('det-parents', node.incomers('node').filter(n => !n.data('isStartMarker')));
+        populateNeighbourButtons('det-successors', node.outgoers('node').filter(n => !n.data('isStartMarker')));
       });
 
-      // Reset toggles
+      // Reset toggles & side panel
+      selectedNodeId = null;
+      document.getElementById('btn-focus-node').disabled = true;
       showStrategy = true;
       showNonStrategy = true;
       document.getElementById('btn-toggle-strat').textContent = 'Strategy: ON';
       document.getElementById('btn-toggle-non-strat').textContent = 'Non-strategy: ON';
+      document.getElementById('det-parents').innerHTML = '';
+      document.getElementById('det-successors').innerHTML = '';
     }
+
+    /* ── Neighbour navigation ───────────────────────── */
+    function focusNode(nodeId) {
+      if (!cy) return;
+      const target = cy.getElementById(nodeId);
+      if (!target.length) return;
+      cy.animate({ fit: { eles: target, padding: 80 }, duration: 350, easing: 'ease-in-out-quad' });
+      target.emit('tap');
+    }
+
+    function populateNeighbourButtons(containerId, nodes) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      if (!nodes.length) {
+        const empty = document.createElement('span');
+        empty.className = 'text-xs text-muted italic';
+        empty.textContent = 'none';
+        container.appendChild(empty);
+        return;
+      }
+      nodes.forEach(n => {
+        const d = n.data();
+        const btn = document.createElement('button');
+        btn.className = 'text-left text-xs font-mono px-2 py-1 rounded bg-accent hover:bg-highlight border border-highlight truncate';
+        btn.title = d.fullLabel || d.label || d.id;
+        btn.textContent = d.label || d.id;
+        btn.addEventListener('click', () => focusNode(d.id));
+        container.appendChild(btn);
+      });
+    }
+
+    /* ── Focus button ───────────────────────────────── */
+    document.getElementById('btn-focus-node').addEventListener('click', () => {
+      if (selectedNodeId) focusNode(selectedNodeId);
+    });
 
     /* ── Layout buttons ─────────────────────────────── */
     document.getElementById('btn-dagre').addEventListener('click', () => {
