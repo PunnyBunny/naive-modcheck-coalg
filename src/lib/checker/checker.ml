@@ -92,12 +92,9 @@ module Make (L : Logic.S) :
               ];
             build_formula_node sub_fmla1 state;
             build_formula_node sub_fmla2 state
-        | Mu (x, sub_fmla)
-        | Nu (x, sub_fmla) ->
-            let priority =
-              alternation_depth x |> Option.value_exn
-            in
-            add_node Eloise priority
+        | Mu (_x, sub_fmla)
+        | Nu (_x, sub_fmla) ->
+            add_node Eloise 0
               [ FormulaNode (sub_fmla, state) ];
             build_formula_node sub_fmla state
         | Var x -> (
