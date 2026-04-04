@@ -1,4 +1,3 @@
-(* TODO: fix name *)
 module Model = struct
   open Model_parser_wrapper
 

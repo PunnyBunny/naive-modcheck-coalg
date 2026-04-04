@@ -2,7 +2,15 @@ open! Core
 
 (** Module type for formulas parameterized by modality *)
 module type S = sig
-  type modality [@@deriving sexp]
+  type 'a modality [@@deriving sexp]
+
+  val map_modality :
+    ('a -> 'b) -> 'a modality -> 'b modality
+
+  val negate_modality :
+    ('a -> 'b) -> 'a modality -> 'b modality
+
+  val iter_modality : ('a -> unit) -> 'a modality -> unit
 
   type t =
     | True
@@ -12,8 +20,7 @@ module type S = sig
     | Var of Var.t
     | And of t * t
     | Or of t * t
-    | Diamond of Action.t * modality * t
-    | Box of Action.t * modality * t
+    | Modal of t modality
     | Mu of Var.t * t
     | Nu of Var.t * t
   [@@deriving sexp]
@@ -24,11 +31,19 @@ end
 (** Functor to create a formula module from a modality type
 *)
 module Make (M : sig
-  type t [@@deriving sexp]
+  type 'a t [@@deriving sexp]
 
-  val to_string : t -> string
-end) : S with type modality = M.t = struct
-  type modality = M.t [@@deriving sexp]
+  val to_string :
+    'a t -> to_string_children:('a -> string) -> string
+
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val negate : ('a -> 'b) -> 'a t -> 'b t
+end) : S with type 'a modality = 'a M.t = struct
+  type 'a modality = 'a M.t [@@deriving sexp]
+
+  let map_modality = M.map
+  let negate_modality = M.negate
+  let iter_modality f m = ignore (M.map f m)
 
   type t =
     | True
@@ -38,8 +53,7 @@ end) : S with type modality = M.t = struct
     | Var of Var.t
     | And of t * t
     | Or of t * t
-    | Diamond of Action.t * modality * t
-    | Box of Action.t * modality * t
+    | Modal of t modality
     | Mu of Var.t * t
     | Nu of Var.t * t
   [@@deriving sexp]
@@ -57,22 +71,8 @@ end) : S with type modality = M.t = struct
     | Or (f1, f2) ->
         "(" ^ pretty_print f1 ^ " ∨ " ^ pretty_print f2
         ^ ")"
-    | Diamond (action, modality, subfmla) ->
-        "<"
-        ^ (if Action.to_string action |> String.is_empty
-           then ""
-           else Action.to_string action ^ ", ")
-        ^ M.to_string modality
-        ^ ">"
-        ^ pretty_print subfmla
-    | Box (action, modality, subfmla) ->
-        "["
-        ^ (if Action.to_string action |> String.is_empty
-           then ""
-           else Action.to_string action ^ ", ")
-        ^ M.to_string modality
-        ^ "]"
-        ^ pretty_print subfmla
+    | Modal f' ->
+        M.to_string f' ~to_string_children:pretty_print
     | Mu (v, subfmla) ->
         "μ " ^ Var.to_string v ^ "." ^ pretty_print subfmla
     | Nu (v, subfmla) ->

@@ -4,12 +4,12 @@ include Logic_intf
 
 module Make (Spec : LOGIC_SPECIFICATION) :
   S
-    with type modality = Spec.modality
+    with type 'a modality = 'a Spec.modality
      and type transition = Spec.transition
      and module Model = Spec.Model
      and module Formula = Spec.Formula
      and module Formula_ast = Spec.Formula_ast = struct
-  type modality = Spec.modality [@@deriving sexp]
+  type 'a modality = 'a Spec.modality [@@deriving sexp]
   type transition = Spec.transition [@@deriving sexp]
 
   module Model = Spec.Model
@@ -28,8 +28,8 @@ module Make (Spec : LOGIC_SPECIFICATION) :
         And (formula_of_ast f1, formula_of_ast f2)
     | Or (f1, f2) ->
         Or (formula_of_ast f1, formula_of_ast f2)
-    | Diamond (a, m, f) -> Diamond (a, m, formula_of_ast f)
-    | Box (a, m, f) -> Box (a, m, formula_of_ast f)
+    | Modal m ->
+        Modal (Formula.map_modality formula_of_ast m)
     | Mu (x, f) -> Mu (x, formula_of_ast f)
     | Nu (x, f) -> Nu (x, formula_of_ast f)
     | Not f -> negate (formula_of_ast f)
@@ -45,8 +45,7 @@ module Make (Spec : LOGIC_SPECIFICATION) :
     | Var _ -> failwith "Cannot negate a fixpoint variable"
     | And (f1, f2) -> Or (negate f1, negate f2)
     | Or (f1, f2) -> And (negate f1, negate f2)
-    | Diamond (a, m, f) -> Box (a, m, negate f)
-    | Box (a, m, f) -> Diamond (a, m, negate f)
+    | Modal m -> Modal (Formula.negate_modality negate m)
     | Mu (x, f) -> Nu (x, negate f)
     | Nu (x, f) -> Mu (x, negate f)
 
@@ -56,6 +55,7 @@ module Make (Spec : LOGIC_SPECIFICATION) :
   }
 
   let one_step_satisfaction = Spec.one_step_satisfaction
+  let one_step_game = Spec.one_step_game
 
   let is_atom_in_state ~(model : Model.t) ~(state : State.t)
       ~(atom : Ap.t) : bool =
@@ -79,9 +79,7 @@ module Make (Spec : LOGIC_SPECIFICATION) :
       | Or (f1, f2) ->
           build_theta_table f1;
           build_theta_table f2
-      | Diamond (_, _, f)
-      | Box (_, _, f) ->
-          build_theta_table f
+      | Modal m -> Formula.iter_modality build_theta_table m
       | (Mu (v, f') | Nu (v, f')) as f ->
           Hashtbl.set theta_table ~key:v ~data:f;
           build_theta_table f'
@@ -101,9 +99,14 @@ module Make (Spec : LOGIC_SPECIFICATION) :
       | And (f1, f2)
       | Or (f1, f2) ->
           Int.max (build_table f1) (build_table f2)
-      | Diamond (_, _, f)
-      | Box (_, _, f) ->
-          build_table f
+      | Modal m ->
+          let max_depth = ref 0 in
+          Formula.iter_modality
+            (fun f ->
+              max_depth :=
+                Int.max !max_depth (build_table f))
+            m;
+          !max_depth
       | Mu (v, f) ->
           let depth = build_table f in
           let new_depth =

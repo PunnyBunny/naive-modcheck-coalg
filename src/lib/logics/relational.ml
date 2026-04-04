@@ -2,22 +2,41 @@ open! Core
 open Naive_modcheck_coalg_common
 
 module Relational_formula = Formula_intf.Make (struct
-  type t = unit [@@deriving sexp]
+  open Naive_modcheck_coalg_parsers.Formula.Ast
 
-  let to_string () = ""
+  type 'a t = 'a relational_modality =
+    | Diamond of 'a
+    | Box of 'a
+  [@@deriving sexp]
+
+  let to_string f ~to_string_children =
+    match f with
+    | Diamond subf -> "<>" ^ to_string_children subf
+    | Box subf -> "[]" ^ to_string_children subf
+
+  let map f = function
+    | Diamond x -> Diamond (f x)
+    | Box x -> Box (f x)
+
+  let negate f = function
+    | Diamond x -> Box (f x)
+    | Box x -> Diamond (f x)
 end)
 
 module Relational_model = Model_intf.Make (struct
   type t = State.t list [@@deriving sexp]
 
   let to_string states =
-    let inner = String.concat ~sep:", " (List.map ~f:State.to_string states) in
+    let inner =
+      String.concat ~sep:", "
+        (List.map ~f:State.to_string states)
+    in
     {%string|{%{inner}}|}
 end)
 
 module M :
   Logic_intf.LOGIC_SPECIFICATION
-    with type modality = unit
+    with type 'a modality = 'a Relational_formula.modality
      and type transition = State.t list
      and module Model = Relational_model
      and module Formula = Relational_formula
@@ -25,7 +44,9 @@ module M :
                               .Formula
                               .Ast
                               .Relational_ast = struct
-  type modality = unit [@@deriving sexp]
+  type 'a modality = 'a Relational_formula.modality
+  [@@deriving sexp]
+
   type transition = State.t list [@@deriving sexp]
 
   module Model = Relational_model
@@ -57,6 +78,10 @@ module M :
     | `Box ->
         List.for_all successors ~f:(fun s ->
             List.mem states s ~equal:State.equal)
+
+  let one_step_game ~model:_ ~state:_ ~formula:_
+      ~add_to_game:_ =
+    ()
 
   let parse_formula =
     Naive_modcheck_coalg_parsers.Formula

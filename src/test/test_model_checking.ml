@@ -93,10 +93,6 @@ let tests_from_pair (model_path, test_path) =
           Printf.sprintf "%s:%d" base (i + 1)
           >:: make_check formula state expected)
 
-(* k12 (28 states) and prob_20states (20 states) are excluded: the naive
-   checker computes the full powerset of states (2^n), which would OOM at
-   2^28 ≈ 268M and hang at 2^20 ≈ 1M entries. The data files are kept for
-   future use if a polynomial checker is added. *)
 let test_pairs =
   [
     ("data/k1.model", "data/k1.test")

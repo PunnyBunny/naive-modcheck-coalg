@@ -3,7 +3,7 @@ open Naive_modcheck_coalg_common
 
 (** AST for formulas - may not be in NNF *)
 module type S = sig
-  type modality [@@deriving sexp]
+  type 'a modality [@@deriving sexp]
 
   type t =
     | True
@@ -13,17 +13,16 @@ module type S = sig
     | Var of Var.t
     | And of t * t
     | Or of t * t
-    | Diamond of Action.t * modality * t
-    | Box of Action.t * modality * t
+    | Modal of t modality
     | Mu of Var.t * t
     | Nu of Var.t * t
   [@@deriving sexp]
 end
 
 module Make (M : sig
-  type t [@@deriving sexp]
-end) : S with type modality = M.t = struct
-  type modality = M.t [@@deriving sexp]
+  type 'a t [@@deriving sexp]
+end) : S with type 'a modality = 'a M.t = struct
+  type 'a modality = 'a M.t [@@deriving sexp]
 
   type t =
     | True
@@ -33,24 +32,30 @@ end) : S with type modality = M.t = struct
     | Var of Var.t
     | And of t * t
     | Or of t * t
-    | Diamond of Action.t * modality * t
-    | Box of Action.t * modality * t
+    | Modal of t modality
     | Mu of Var.t * t
     | Nu of Var.t * t
   [@@deriving sexp]
 end
 
-(** Relational logic AST: unit modality *)
+type 'a relational_modality = Diamond of 'a | Box of 'a
+[@@deriving sexp]
+
 module Relational_ast = Make (struct
-  type t = unit [@@deriving sexp]
+  type 'a t = 'a relational_modality [@@deriving sexp]
 end)
 
-type frac = Frac.t [@@deriving sexp]
 (** Probability threshold for probabilistic modal logic. For
     diamond <p/q>, the semantics is "probability > p/q". For
     box [p/q], the semantics is "probability <= p/q". *)
 
-(** Probabilistic modal logic AST: fraction as modality *)
+type 'a probabilistic_modality =
+  | GE of Frac.t * 'a
+  | LE of Frac.t * 'a
+  | GT of Frac.t * 'a
+  | LT of Frac.t * 'a
+[@@deriving sexp]
+
 module Probabilistic_ast = Make (struct
-  type t = frac [@@deriving sexp]
+  type 'a t = 'a probabilistic_modality [@@deriving sexp]
 end)

@@ -56,8 +56,8 @@ rel_formula:
   | LPAREN f = rel_formula RPAREN { f }
   | f1 = rel_formula AND f2 = rel_formula { Formula_ast.Relational_ast.And (f1, f2) }
   | f1 = rel_formula OR f2 = rel_formula { Formula_ast.Relational_ast.Or (f1, f2) }
-  | LANGLE a = action RANGLE f = rel_formula { Formula_ast.Relational_ast.Diamond (a, (), f) }
-  | LBRACK a = action RBRACK f = rel_formula { Formula_ast.Relational_ast.Box (a, (), f) }
+  | LANGLE RANGLE f = rel_formula { Formula_ast.Relational_ast.Modal (Formula_ast.Diamond f) }
+  | LBRACK RBRACK f = rel_formula { Formula_ast.Relational_ast.Modal (Formula_ast.Box f) }
   | x = mu_binder f = rel_formula { _pop (); Formula_ast.Relational_ast.Mu (Var.of_string x, f) }
   | x = nu_binder f = rel_formula { _pop (); Formula_ast.Relational_ast.Nu (Var.of_string x, f) }
   | p = IDENT {
@@ -75,8 +75,8 @@ prob_formula:
   | LPAREN f = prob_formula RPAREN { f }
   | f1 = prob_formula AND f2 = prob_formula { Formula_ast.Probabilistic_ast.And (f1, f2) }
   | f1 = prob_formula OR f2 = prob_formula { Formula_ast.Probabilistic_ast.Or (f1, f2) }
-  | LANGLE n = INT SLASH d = INT a = action RANGLE f = prob_formula { Formula_ast.Probabilistic_ast.Diamond (a, (Frac.make n d), f) }
-  | LBRACK n = INT SLASH d = INT a = action RBRACK f = prob_formula { Formula_ast.Probabilistic_ast.Box (a, (Frac.make n d), f) }
+  | LANGLE n = INT SLASH d = INT RANGLE f = prob_formula { Formula_ast.Probabilistic_ast.Modal (Formula_ast.GT (Frac.make n d, f)) }
+  | LBRACK n = INT SLASH d = INT RBRACK f = prob_formula { Formula_ast.Probabilistic_ast.Modal (Formula_ast.LE (Frac.make n d, f)) }
   | x = mu_binder f = prob_formula { _pop (); Formula_ast.Probabilistic_ast.Mu (Var.of_string x, f) }
   | x = nu_binder f = prob_formula { _pop (); Formula_ast.Probabilistic_ast.Nu (Var.of_string x, f) }
   | p = IDENT {

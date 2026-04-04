@@ -3,18 +3,18 @@ open Naive_modcheck_coalg_common
 
 (** Common signature for all logics *)
 module type S = sig
-  type modality [@@deriving sexp]
+  type 'a modality [@@deriving sexp]
   type transition [@@deriving sexp]
- 
+
   module Model :
     Model_intf.S with type transition = transition
 
   module Formula :
-    Formula_intf.S with type modality = modality
+    Formula_intf.S with type 'a modality = 'a modality
 
   module Formula_ast :
     Naive_modcheck_coalg_parsers.Formula.Ast.S
-      with type modality = modality
+      with type 'a modality = 'a modality
 
   val formula_of_ast : Formula_ast.t -> Formula.t
   (** Convert AST to formula (e.g., convert to NNF) *)
@@ -35,12 +35,25 @@ module type S = sig
     -> action:Action.t
     -> bool
   (** Returns the solution to the one step satisfaction
-      problem: whether `s \in [[♥]]U` (predicate lifting).
+      problem: whether `xi(s) \in [[♥]]U` (predicate
+      lifting).
 
       - s is denoted by [state]
       - ♥ is denoted by [box_or_diamond] (TODO: and
         modality)
       - U is denoted by [states] *)
+
+  val one_step_game :
+       model:Model.t
+    -> state:State.t
+    -> formula:Formula.t
+    -> add_to_game:
+         (   (Formula.t, State.t) Game.node
+          -> Game.Player.t
+             * Game.Priority.t
+             * (Formula.t, State.t) Game.node list
+          -> unit)
+    -> unit
 
   val is_atom_in_state :
     model:Model.t -> state:State.t -> atom:Ap.t -> bool
@@ -55,19 +68,42 @@ module type S = sig
   (** Parse a model from a string *)
 end
 
+(* 
+TODO: 
+  * modality no longer is just box/diamond
+  * one step satisfaction change from solving
+      xi(c) \in [[♥]]U, i.e. whether c |= ♥ U under (C, xi : C -> T C, c),
+    to giving (c, phi) as starting node, omit U, 
+    construct the one-step game/arena (by providing a builder function),
+    e.g. T = Pow: (c, box phi) --A-> (d, phi) for all d in xi(c) 
+    e.g. T = Dist: 
+    - (c, L_p phi) --E-> (D, phi), xi(c)(D) >= p
+    - (D, phi) --A-> (d, phi), d in D
+  * recover one step satisfaction by 
+    - (c, ♥ phi) --E-> (D, phi), xi(c) \in [[♥]]D
+    - (D, phi) --A-> (d, phi), d in D
+
+Plan:
+  * migrate to 
+    - one_step_game : model -> state -> formula -> builder -> unit
+    - outermost operator of formula is a modal operator
+  * change the checkers to use the one step game instead of one step satisfaction
+  * regress
+  * think about the syntax enabled by this, e.g. remove atoms and encode with (\otimes At)
+*)
 module type LOGIC_SPECIFICATION = sig
-  type modality [@@deriving sexp]
+  type 'a modality [@@deriving sexp]
   type transition [@@deriving sexp]
 
   module Model :
     Model_intf.S with type transition = transition
 
   module Formula :
-    Formula_intf.S with type modality = modality
+    Formula_intf.S with type 'a modality = 'a modality
 
   module Formula_ast :
     Naive_modcheck_coalg_parsers.Formula.Ast.S
-      with type modality = modality
+      with type 'a modality = 'a modality
 
   val one_step_satisfaction :
        model:Model.t
@@ -76,6 +112,18 @@ module type LOGIC_SPECIFICATION = sig
     -> states:State.t list
     -> action:Action.t
     -> bool
+
+  val one_step_game :
+       model:Model.t
+    -> state:State.t
+    -> formula:Formula.t
+    -> add_to_game:
+         (   (Formula.t, State.t) Game.node
+          -> Game.Player.t
+             * Game.Priority.t
+             * (Formula.t, State.t) Game.node list
+          -> unit)
+    -> unit
 
   val parse_formula : string -> Formula_ast.t
   val parse_model : string -> Model.t
@@ -87,7 +135,7 @@ module type Intf = sig
 
   module Make (Spec : LOGIC_SPECIFICATION) :
     S
-      with type modality = Spec.modality
+      with type 'a modality = 'a Spec.modality
        and type transition = Spec.transition
        and module Model = Spec.Model
        and module Formula = Spec.Formula

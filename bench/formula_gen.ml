@@ -11,13 +11,12 @@ let odd = Ap.of_string "odd"
 
 let branch i =
   let xi = Formula.Var (var i) in
-  let eps = Action.of_string "" in
   let even_step =
     Formula.And
-      (Formula.Ap even, Formula.Diamond (eps, (), xi))
+      (Formula.Ap even, Formula.Modal (Diamond xi))
   in
   let odd_step =
-    Formula.And (Formula.Ap odd, Formula.Box (eps, (), xi))
+    Formula.And (Formula.Ap odd, Formula.Modal (Box xi))
   in
   Formula.And
     (Formula.Ap (atom i), Formula.Or (even_step, odd_step))
