@@ -2,8 +2,6 @@ open! Core
 open Naive_modcheck_coalg_common
 open Angstrom
 open Formula_lexer_angstrom
-(* TODO: remove open Angstrom *)
-(* TODO: remove sym *)
 (* ---- Chain combinators ---- *)
 
 let chain_unary ~op e =
