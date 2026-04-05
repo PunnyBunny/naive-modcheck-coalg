@@ -17,6 +17,8 @@ module type S = sig
     | Mu of Var.t * t
     | Nu of Var.t * t
   [@@deriving sexp]
+
+  val modal_map : (t -> t) -> t modality -> t modality
 end
 
 type 'a relational_modality = Diamond of 'a | Box of 'a

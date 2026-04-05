@@ -10,12 +10,12 @@ module Model = struct
 end
 
 module Formula = struct
-  open Formula_parser_wrapper
-
-  let parse_relational_formula = parse_relational_formula
+  let parse_relational_formula =
+    Relational_formula_angstrom.parse_relational_formula
 
   let parse_probabilistic_formula =
-    parse_probabilistic_formula
+    Probabilistic_formula_angstrom
+    .parse_probabilistic_formula
 
   module Ast = Formula_ast
 end

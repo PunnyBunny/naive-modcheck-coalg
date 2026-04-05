@@ -85,8 +85,8 @@ let test_rel_formula_associativity _ =
     (rel_formula "(p && q) || (r && s)");
   assert_sexp
     ~expected:
-      "(Mu X (Or (And (Ap p) (Modal (Diamond (Var X)))) (Nu Y \
-       (And (Ap q) (Modal (Box (Var Y)))))))"
+      "(Mu X (Or (And (Ap p) (Modal (Diamond (Var X)))) \
+       (Nu Y (And (Ap q) (Modal (Box (Var Y)))))))"
     (rel_formula "mu X. (p && <>X) || nu Y. (q && []Y)");
   assert_sexp ~expected:"(And (And (Ap p) (Ap q)) (Ap r))"
     (rel_formula "p && q && r");

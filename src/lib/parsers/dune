@@ -1,6 +1,6 @@
 (library
  (name naive_modcheck_coalg_parsers)
- (libraries core naive_modcheck_coalg_common menhirLib)
+ (libraries core naive_modcheck_coalg_common menhirLib angstrom)
  (preprocess
   (pps ppx_jane)))
 
