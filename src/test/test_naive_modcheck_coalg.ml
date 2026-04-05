@@ -60,24 +60,24 @@ let test_rel_formula_disjunction _ =
     (rel_formula "p ∨ q")
 
 let test_rel_formula_modalities _ =
-  assert_sexp ~expected:"(Diamond a () (Ap p))"
-    (rel_formula "<a>p");
-  assert_sexp ~expected:"(Box a () (Ap p))"
-    (rel_formula "[a]p")
+  assert_sexp ~expected:"(Modal (Diamond (Ap p)))"
+    (rel_formula "<>p");
+  assert_sexp ~expected:"(Modal (Box (Ap p)))"
+    (rel_formula "[]p")
 
 let test_rel_formula_fixpoints _ =
   assert_sexp
-    ~expected:"(Mu X (Or (Ap p) (Diamond a () (Var X))))"
-    (rel_formula "mu X. p || <a>X");
+    ~expected:"(Mu X (Or (Ap p) (Modal (Diamond (Var X)))))"
+    (rel_formula "mu X. p || <>X");
   assert_sexp
-    ~expected:"(Mu X (Or (Ap p) (Diamond a () (Var X))))"
-    (rel_formula "μ X. p ∨ <a>X");
+    ~expected:"(Mu X (Or (Ap p) (Modal (Diamond (Var X)))))"
+    (rel_formula "μ X. p ∨ <>X");
   assert_sexp
-    ~expected:"(Nu X (And (Ap p) (Box a () (Var X))))"
-    (rel_formula "nu X. p && [a]X");
+    ~expected:"(Nu X (And (Ap p) (Modal (Box (Var X)))))"
+    (rel_formula "nu X. p && []X");
   assert_sexp
-    ~expected:"(Nu X (And (Ap p) (Box a () (Var X))))"
-    (rel_formula "ν X. p ∧ [a]X")
+    ~expected:"(Nu X (And (Ap p) (Modal (Box (Var X)))))"
+    (rel_formula "ν X. p ∧ []X")
 
 let test_rel_formula_associativity _ =
   assert_sexp
@@ -85,9 +85,9 @@ let test_rel_formula_associativity _ =
     (rel_formula "(p && q) || (r && s)");
   assert_sexp
     ~expected:
-      "(Mu X (Or (And (Ap p) (Diamond a () (Var X))) (Nu Y \
-       (And (Ap q) (Box b () (Var Y))))))"
-    (rel_formula "mu X. (p && <a>X) || nu Y. (q && [b]Y)");
+      "(Mu X (Or (And (Ap p) (Modal (Diamond (Var X)))) (Nu Y \
+       (And (Ap q) (Modal (Box (Var Y)))))))"
+    (rel_formula "mu X. (p && <>X) || nu Y. (q && []Y)");
   assert_sexp ~expected:"(And (And (Ap p) (Ap q)) (Ap r))"
     (rel_formula "p && q && r");
   assert_sexp ~expected:"(Or (Or (Ap p) (Ap q)) (Ap r))"
@@ -98,9 +98,9 @@ let test_rel_formula_associativity _ =
 let test_rel_formula_mixed_unicode _ =
   assert_sexp
     ~expected:
-      "(Mu X (And (Ap p) (Diamond a () (Or (Var X) (Nu Y \
-       (Or (Ap q) (Box b () (Var Y))))))))"
-    (rel_formula "μ X. p ∧ <a>X || ν Y. q ∨ [b]Y")
+      "(Mu X (And (Ap p) (Modal (Diamond (Or (Var X) (Nu Y \
+       (Or (Ap q) (Modal (Box (Var Y))))))))))"
+    (rel_formula "μ X. p ∧ <>X || ν Y. q ∨ []Y")
 
 (* ============================================================================ *)
 (* Relational Models *)
@@ -154,33 +154,30 @@ let test_prob_formula_connectives _ =
     (prob_formula "p || q")
 
 let test_prob_formula_modalities _ =
-  assert_sexp ~expected:{|(Diamond "" (1 2) (Ap p))|}
+  assert_sexp ~expected:{|(Modal (GT (1 2) (Ap p)))|}
     (prob_formula "<1/2> p");
-  assert_sexp ~expected:{|(Box "" (1 4) (Ap p))|}
-    (prob_formula "[1/4] p");
-  assert_sexp ~expected:"(Diamond a (1 2) (Ap p))"
-    (prob_formula "<1/2 a> p");
-  assert_sexp ~expected:"(Box a (3 4) (Ap p))"
-    (prob_formula "[3/4 a] p")
+  assert_sexp ~expected:{|(Modal (LE (1 4) (Ap p)))|}
+    (prob_formula "[1/4] p")
 
 let test_prob_formula_fixpoints _ =
   assert_sexp
     ~expected:
-      {|(Mu X (Or (Ap p) (Diamond "" (1 2) (Var X))))|}
+      {|(Mu X (Or (Ap p) (Modal (GT (1 2) (Var X)))))|}
     (prob_formula "mu X. p || <1/2>X");
   assert_sexp
-    ~expected:{|(Nu X (And (Ap p) (Box "" (1 2) (Var X))))|}
+    ~expected:
+      {|(Nu X (And (Ap p) (Modal (LE (1 2) (Var X)))))|}
     (prob_formula "nu X. p && [1/2]X")
 
 let test_prob_formula_complex _ =
   assert_sexp
     ~expected:
-      {|(Mu X (Or (And (Ap p) (Diamond "" (1 2) (Var X))) (Nu Y (And (Ap q) (Box "" (1 3) (Var Y))))))|}
+      {|(Mu X (Or (And (Ap p) (Modal (GT (1 2) (Var X)))) (Nu Y (And (Ap q) (Modal (LE (1 3) (Var Y)))))))|}
     (prob_formula
        "mu X. (p && <1/2>X) || nu Y. (q && [1/3]Y)");
   assert_sexp
     ~expected:
-      {|(Mu X (And (Ap p) (Diamond "" (1 2) (Var X))))|}
+      {|(Mu X (And (Ap p) (Modal (GT (1 2) (Var X)))))|}
     (prob_formula "μ X. p ∧ <1/2>X")
 
 (* ============================================================================ *)
@@ -190,11 +187,11 @@ let test_prob_formula_complex _ =
 let test_prob_nnf _ =
   assert_sexp ~expected:"(Or (Not p) (Not q))"
     (logics_prob_to_nnf "~(p && q)");
-  assert_sexp ~expected:{|(Box "" (1 2) (Not p))|}
+  assert_sexp ~expected:{|(Modal (LE (1 2) (Not p)))|}
     (logics_prob_to_nnf "~<1/2>p");
   assert_sexp
     ~expected:
-      {|(Mu X (Or (And (Ap p) (Diamond "" (1 2) (Var X))) (Nu Y (And (Ap q) (Box "" (1 3) (Var Y))))))|}
+      {|(Mu X (Or (And (Ap p) (Modal (GT (1 2) (Var X)))) (Nu Y (And (Ap q) (Modal (LE (1 3) (Var Y)))))))|}
     (logics_prob_to_nnf
        "mu X. (p && <1/2>X) || nu Y. (q && [1/3]Y)")
 
