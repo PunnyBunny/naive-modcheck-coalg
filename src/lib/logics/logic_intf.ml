@@ -46,14 +46,8 @@ module type S = sig
   val one_step_game :
        model:Model.t
     -> state:State.t
-    -> formula:Formula.t
-    -> add_to_game:
-         (   (Formula.t, State.t) Game.node
-          -> Game.Player.t
-             * Game.Priority.t
-             * (Formula.t, State.t) Game.node list
-          -> unit)
-    -> unit
+    -> modal_formula:Formula.t Formula.modality
+    -> (Formula.t, State.t) Game.one_step_game
 
   val is_atom_in_state :
     model:Model.t -> state:State.t -> atom:Ap.t -> bool
@@ -116,14 +110,8 @@ module type LOGIC_SPECIFICATION = sig
   val one_step_game :
        model:Model.t
     -> state:State.t
-    -> formula:Formula.t
-    -> add_to_game:
-         (   (Formula.t, State.t) Game.node
-          -> Game.Player.t
-             * Game.Priority.t
-             * (Formula.t, State.t) Game.node list
-          -> unit)
-    -> unit
+    -> modal_formula:Formula.t Formula.modality
+    -> (Formula.t, State.t) Game.one_step_game
 
   val parse_formula : string -> Formula_ast.t
   val parse_model : string -> Model.t

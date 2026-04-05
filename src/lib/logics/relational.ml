@@ -79,9 +79,42 @@ module M :
         List.for_all successors ~f:(fun s ->
             List.mem states s ~equal:State.equal)
 
-  let one_step_game ~model:_ ~state:_ ~formula:_
-      ~add_to_game:_ =
-    ()
+  let one_step_game ~model ~state
+      ~(modal_formula : Formula.t Formula.modality) =
+    let player =
+      match modal_formula with
+      | Diamond _ -> Game.Player.Eloise
+      | Box _ -> Game.Player.Abelard
+    in
+    let subformula =
+      match modal_formula with
+      | Diamond f
+      | Box f ->
+          f
+    in
+    let game = Hashtbl.Poly.create () in
+    let start_node =
+      Game.FormulaNode (Formula.Modal modal_formula, state)
+    in
+    let successors =
+      next_states model state (Action.of_string "")
+    in
+    let middle_node =
+      Game.ModalNode
+        (Formula.Modal modal_formula, successors)
+    in
+    let game_exit_nodes =
+      List.map successors ~f:(fun s ->
+          Game.FormulaNode (subformula, s))
+    in
+    Hashtbl.set game ~key:start_node
+      ~data:(Game.Player.Eloise, 0, [ middle_node ]);
+    Hashtbl.set game ~key:middle_node
+      ~data:(player, 0, game_exit_nodes);
+    let exit_nodes =
+      List.map successors ~f:(fun s -> (subformula, s))
+    in
+    { Game.game; exit_nodes }
 
   let parse_formula =
     Naive_modcheck_coalg_parsers.Formula

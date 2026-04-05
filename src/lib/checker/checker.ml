@@ -6,44 +6,26 @@ module Make (L : Logic.S) :
   Checker_intf.S with module Logic = L = struct
   module Logic = L
 
-  (* Game node types *)
-  type node =
-    | FormulaNode of Logic.Formula.t * State.t
-    | ModalNode of Logic.Formula.t * State.t list
+  type node = (Logic.Formula.t, State.t) Game.node
   [@@deriving sexp]
-
-  module Priority = struct
-    type t = int [@@deriving sexp]
-  end
-
-  module Player = struct
-    type t = Eloise | Abelard [@@deriving sexp]
-  end
 
   type game =
-    (node, Player.t * Priority.t * node list) Hashtbl.Poly.t
+    ( node
+    , Game.Player.t * Game.Priority.t * node list )
+    Hashtbl.Poly.t
   [@@deriving sexp]
-
-  (* Helper: powerset *)
-  let rec powerset lst =
-    match lst with
-    | [] -> [ [] ]
-    | x :: xs ->
-        let ps = powerset xs in
-        ps @ List.map ps ~f:(fun subset -> x :: subset)
 
   let pretty_print_formula node =
     match node with
-    | FormulaNode (formula, _)
-    | ModalNode (formula, _) ->
+    | Game.FormulaNode (formula, _)
+    | Game.ModalNode (formula, _) ->
         Logic.Formula.pretty_print formula
 
   (* Build parity game from model and formula *)
   let build_game ~(model : Logic.Model.t) ~(point : State.t)
       ~(formula : Logic.Formula.t) : game =
     let game = Hashtbl.Poly.create () in
-    let states = Logic.get_states ~model in
-    let powerset_of_states = powerset states in
+    let _states = Logic.get_states ~model in
     let { theta; alternation_depth } :
         Logic.helper_functions =
       Logic.get_helper_functions formula
@@ -51,11 +33,11 @@ module Make (L : Logic.S) :
 
     let rec build_formula_node (formula : Logic.Formula.t)
         (state : State.t) : unit =
-      let node = FormulaNode (formula, state) in
+      let node = Game.FormulaNode (formula, state) in
       if Hashtbl.mem game node then ()
       else
-        let add_node (owner : Player.t) priority successors
-            =
+        let add_node (owner : Game.Player.t) priority
+            successors =
           Hashtbl.set game ~key:node
             ~data:(owner, priority, successors)
         in
@@ -79,23 +61,23 @@ module Make (L : Logic.S) :
         | And (sub_fmla1, sub_fmla2) ->
             add_node Abelard 0
               [
-                FormulaNode (sub_fmla1, state)
-              ; FormulaNode (sub_fmla2, state)
+                Game.FormulaNode (sub_fmla1, state)
+              ; Game.FormulaNode (sub_fmla2, state)
               ];
             build_formula_node sub_fmla1 state;
             build_formula_node sub_fmla2 state
         | Or (sub_fmla1, sub_fmla2) ->
             add_node Eloise 0
               [
-                FormulaNode (sub_fmla1, state)
-              ; FormulaNode (sub_fmla2, state)
+                Game.FormulaNode (sub_fmla1, state)
+              ; Game.FormulaNode (sub_fmla2, state)
               ];
             build_formula_node sub_fmla1 state;
             build_formula_node sub_fmla2 state
         | Mu (_x, sub_fmla)
         | Nu (_x, sub_fmla) ->
             add_node Eloise 0
-              [ FormulaNode (sub_fmla, state) ];
+              [ Game.FormulaNode (sub_fmla, state) ];
             build_formula_node sub_fmla state
         | Var x -> (
             match theta x with
@@ -104,70 +86,33 @@ module Make (L : Logic.S) :
                   alternation_depth x |> Option.value_exn
                 in
                 add_node Eloise priority
-                  [ FormulaNode (f_def, state) ];
+                  [ Game.FormulaNode (f_def, state) ];
                 build_formula_node f_def state
             | None ->
                 failwith
                   ("Unbound variable: " ^ Var.to_string x))
-        | Diamond (a, _m, sub_fmla) ->
-            let satisfying_sets =
-              List.filter powerset_of_states
-                ~f:(fun state_set ->
-                  Logic.one_step_satisfaction
-                    ~box_or_diamond:`Diamond ~model ~state
-                    ~states:state_set ~action:a)
+        | Modal modal_fmla ->
+            let { Game.game = one_step_game; exit_nodes } =
+              Logic.one_step_game ~model ~state
+                ~modal_formula:modal_fmla
             in
-            let modal_nodes =
-              List.map satisfying_sets ~f:(fun states ->
-                  ModalNode (sub_fmla, states))
+            Hashtbl.iteri one_step_game
+              ~f:(fun
+                  ~key:game_node
+                  ~data:(owner, priority, successors)
+                ->
+                Hashtbl.set game ~key:game_node
+                  ~data:(owner, priority, successors));
+            let initial_node =
+              Game.FormulaNode (formula, state)
             in
-            add_node Eloise 0 modal_nodes;
-            List.iter satisfying_sets ~f:(fun states ->
-                build_modal_node sub_fmla states)
-        | Box (a, _m, sub_fmla) ->
-            let satisfying_sets =
-              List.filter powerset_of_states
-                ~f:(fun state_set ->
-                  Logic.one_step_satisfaction
-                    ~box_or_diamond:`Box ~model ~state
-                    ~states:state_set ~action:a)
-            in
-            let modal_nodes =
-              List.map satisfying_sets ~f:(fun states ->
-                  ModalNode (sub_fmla, states))
-            in
-            add_node Eloise 0 modal_nodes;
-            (* This was wrong, can be put into dissertation *)
-            List.iter satisfying_sets ~f:(fun states ->
-                build_modal_node sub_fmla states)
-    (*  (* Use only the minimal Box-satisfying set (intersection of all satisfying
-               sets = exact successors for relational, distribution support for
-               probabilistic). This prevents Abelard from challenging with non-successor
-               states drawn from artificially large witness sets. *)
-            (match satisfying_sets with
-            | [] -> add_node Abelard 0 []
-            | first :: rest ->
-                let min_set =
-                  List.fold rest ~init:first ~f:(fun acc s_set ->
-                      List.filter acc ~f:(fun s ->
-                          List.mem s_set s ~equal:State.equal))
-                in
-                add_node Abelard 0 [ ModalNode (sub_fmla, min_set) ];
-                build_modal_node sub_fmla min_set)*)
-    and build_modal_node (sub_fmla : Logic.Formula.t)
-        (states : State.t list) : unit =
-      let node = ModalNode (sub_fmla, states) in
-      if Hashtbl.mem game node then ()
-      else begin
-        let formula_nodes =
-          List.map states ~f:(fun state ->
-              FormulaNode (sub_fmla, state))
-        in
-        Hashtbl.set game ~key:node
-          ~data:(Abelard, 0, formula_nodes);
-        List.iter states ~f:(fun state ->
-            build_formula_node sub_fmla state)
-      end
+            if not (Hashtbl.mem game initial_node) then
+              failwith
+                "One-step game did not populate initial \
+                 node";
+            List.iter exit_nodes
+              ~f:(fun (sub_fmla, s) ->
+                build_formula_node sub_fmla s)
     in
 
     build_formula_node formula point;
@@ -199,8 +144,8 @@ module Make (L : Logic.S) :
 
           let owner_idx =
             match owner with
-            | Eloise -> Paritygame.plr_Even
-            | Abelard -> Paritygame.plr_Odd
+            | Game.Player.Eloise -> Paritygame.plr_Even
+            | Game.Player.Abelard -> Paritygame.plr_Odd
           in
 
           ( priority
@@ -237,8 +182,8 @@ module Make (L : Logic.S) :
       Array.map node_key_array ~f:(fun node ->
           let owner, _, _ = Hashtbl.find_exn game node in
           match owner with
-          | Eloise -> "Eloise"
-          | Abelard -> "Abelard")
+          | Game.Player.Eloise -> "Eloise"
+          | Game.Player.Abelard -> "Abelard")
     in
     let node_priorities =
       Array.map node_key_array ~f:(fun node ->
@@ -264,15 +209,15 @@ module Make (L : Logic.S) :
     let node_is_modal =
       Array.map node_key_array ~f:(fun node ->
           match node with
-          | ModalNode _ -> true
+          | Game.ModalNode _ -> true
           | _ -> false)
     in
     let node_states =
       Array.map node_key_array ~f:(fun node ->
           match node with
-          | FormulaNode (_, state) ->
+          | Game.FormulaNode (_, state) ->
               [ State.to_string state ]
-          | ModalNode (_, states) ->
+          | Game.ModalNode (_, states) ->
               List.map states ~f:State.to_string)
     in
     {
@@ -294,7 +239,7 @@ module Make (L : Logic.S) :
       ~(point : State.t) ~(formula : Logic.Formula.t) :
       Checker_intf.game_data =
     let game = build_game ~model ~point ~formula in
-    let starting_node = FormulaNode (formula, point) in
+    let starting_node = Game.FormulaNode (formula, point) in
     solve_game_internal ~verbose game starting_node
 
   (* Main model checking entry point — returns bool *)

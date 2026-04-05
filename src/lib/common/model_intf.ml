@@ -11,6 +11,7 @@ module type S = sig
     Hashtbl.Poly.t
   [@@deriving sexp]
 
+  val states : t -> State.t list
   val pretty_print : t -> string
 end
 
@@ -28,6 +29,8 @@ end) : S with type transition = T.t = struct
     , Ap.t list * (Action.t, transition) Hashtbl.Poly.t )
     Hashtbl.Poly.t
   [@@deriving sexp]
+
+  let states model = Hashtbl.keys model
 
   let pretty_print model =
     let pp_list pp_elem l =
