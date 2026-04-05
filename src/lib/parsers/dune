@@ -9,12 +9,7 @@
  (flags --table --strict)
  (infer true))
 
-  (menhir
- (modules formula_parser)
- (flags --table)
- (infer true))
-
-(ocamllex model_lexer formula_lexer)
+(ocamllex model_lexer)
 
 (rule
  (targets model_parser_messages.ml)
