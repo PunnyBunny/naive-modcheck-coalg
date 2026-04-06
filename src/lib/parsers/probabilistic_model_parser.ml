@@ -1,5 +1,4 @@
-open Model_angstrom
-
+open Model_parser
 module P = Make (Model_ast.Probabilistic_ast)
 
 let parse_probabilistic_model =

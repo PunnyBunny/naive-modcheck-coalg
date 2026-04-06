@@ -1,7 +1,7 @@
 open! Core
 open Angstrom
 open Lexer
-open Formula_angstrom
+open Formula_parser
 module P = Make (Formula_ast.Relational_ast)
 
 let box x =

@@ -2,7 +2,7 @@ open! Core
 open Naive_modcheck_coalg_common
 open Angstrom
 open Lexer
-open Formula_angstrom
+open Formula_parser
 module P = Make (Formula_ast.Probabilistic_ast)
 
 let modal formula =
