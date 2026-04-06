@@ -1,7 +1,7 @@
 open! Core
 open Naive_modcheck_coalg_common
 open Angstrom
-open Formula_lexer_angstrom
+open Lexer
 open Formula_angstrom
 module P = Make (Formula_ast.Probabilistic_ast)
 

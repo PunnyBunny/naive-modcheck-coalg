@@ -36,3 +36,8 @@ let word =
 
 let integer =
   tok (take_while1 Char.is_digit) >>| int_of_string
+
+let quoted_word =
+  tok
+    (char '"' *> take_while (fun c -> Char.(c <> '"'))
+    <* char '"')

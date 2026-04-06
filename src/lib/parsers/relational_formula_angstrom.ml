@@ -1,6 +1,6 @@
 open! Core
 open Angstrom
-open Formula_lexer_angstrom
+open Lexer
 open Formula_angstrom
 module P = Make (Formula_ast.Relational_ast)
 
