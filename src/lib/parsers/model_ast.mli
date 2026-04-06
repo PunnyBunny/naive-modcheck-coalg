@@ -1,14 +1,13 @@
 open Naive_modcheck_coalg_common
 open! Core
-module Relational_ast : Model_intf.S with type transition = State.t list
 
-module Graded_ast :
-  Model_intf.S with type transition = (State.t, int) Hashtbl.Poly.t
+module Relational_ast :
+  Model_intf.S with type transition = State.t list
 
 module Probabilistic_ast : sig
   type frac = Frac.t [@@deriving sexp]
 
-  include Model_intf.S with type transition = (State.t, frac) Hashtbl.Poly.t
+  include
+    Model_intf.S
+      with type transition = (State.t, frac) Hashtbl.Poly.t
 end
-
-module Monotone_ast : Model_intf.S with type transition = State.t list list
