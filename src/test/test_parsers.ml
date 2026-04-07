@@ -21,13 +21,21 @@ let prob_formula s =
   Formula.parse_probabilistic_formula s
   |> [%sexp_of: Formula.Ast.Probabilistic_ast.t]
 
+module Rel_model =
+  Naive_modcheck_coalg_common.Model_intf.Make
+    (Model.Relational_parser.Model)
+
+module Prob_model =
+  Naive_modcheck_coalg_common.Model_intf.Make
+    (Model.Probabilistic_parser.Model)
+
 let rel_model s =
   Model.parse_relational_model s
-  |> [%sexp_of: Model.Ast.Relational_ast.t]
+  |> [%sexp_of: Rel_model.t]
 
 let prob_model s =
   Model.parse_probabilistic_model s
-  |> [%sexp_of: Model.Ast.Probabilistic_ast.t]
+  |> [%sexp_of: Prob_model.t]
 
 let logics_prob_to_nnf s =
   Logics.Probabilistic.parse_formula s
@@ -181,6 +189,70 @@ let test_prob_formula_complex _ =
     (prob_formula "μ X. p ∧ <1/2>X")
 
 (* ============================================================================ *)
+(* Model roundtrip *)
+(* ============================================================================ *)
+
+let roundtrip_rel input =
+  let model = Model.parse_relational_model input in
+  let pp = Rel_model.pretty_print model in
+  let model' = Model.parse_relational_model pp in
+  [%sexp_of: Rel_model.t] model, [%sexp_of: Rel_model.t] model'
+
+let roundtrip_prob input =
+  let model = Model.parse_probabilistic_model input in
+  let pp = Prob_model.pretty_print model in
+  let model' = Model.parse_probabilistic_model pp in
+  [%sexp_of: Prob_model.t] model, [%sexp_of: Prob_model.t] model'
+
+let assert_roundtrip_rel input _ =
+  let before, after = roundtrip_rel input in
+  assert_equal ~cmp:Sexp.equal ~printer:Sexp.to_string_hum before after
+
+let assert_roundtrip_prob input _ =
+  let before, after = roundtrip_prob input in
+  assert_equal ~cmp:Sexp.equal ~printer:Sexp.to_string_hum before after
+
+let test_rel_model_roundtrip_empty _ =
+  assert_sexp ~expected:"()" (rel_model "[]")
+
+let test_rel_model_roundtrip_single _ =
+  assert_sexp ~expected:"((s0 ((p) ((a (s1 s2))))))"
+    (rel_model "[s0: ({p}, [a: {s1, s2}])]")
+
+let test_rel_model_roundtrip_multi_states _ =
+  assert_sexp
+    ~expected:"((s0 ((p q) ((a (s1))))) (s1 ((r) ())))"
+    (rel_model "[s0: ({p, q}, [a: {s1}]), s1: ({r}, [])]")
+
+let test_rel_model_roundtrip_multi_actions _ =
+  assert_sexp
+    ~expected:"((s0 ((p) ((a (s1)) (b (s2 s3))))))"
+    (rel_model "[s0: ({p}, [a: {s1}, b: {s2, s3}])]")
+
+let test_rel_model_roundtrip_empty_aps _ =
+  assert_sexp ~expected:"((s0 (() ((a (s1))))))"
+    (rel_model "[s0: ({}, [a: {s1}])]")
+
+let test_rel_model_roundtrip_empty_action _ =
+  assert_sexp ~expected:{|((x ((p1) (("" (x y))))))|}
+    (rel_model "[x: ({p1}, [{}: {x, y}])]")
+
+let test_prob_model_roundtrip_empty _ =
+  assert_sexp ~expected:"()" (prob_model "[]")
+
+let test_prob_model_roundtrip_single _ =
+  assert_sexp
+    ~expected:"((s0 ((p) ((a ((s1 (1 2)) (s2 (1 2))))))))"
+    (prob_model "[s0: ({p}, [a: [s1: 1/2, s2: 1/2]])]")
+
+let test_prob_model_roundtrip_multi_actions _ =
+  assert_sexp
+    ~expected:
+      "((s0 ((p) ((a ((s1 (3 4)))) (b ((s2 (1 3))))))))"
+    (prob_model
+       "[s0: ({p}, [a: [s1: 3/4], b: [s2: 1/3]])]")
+
+(* ============================================================================ *)
 (* NNF conversion *)
 (* ============================================================================ *)
 
@@ -218,7 +290,36 @@ let suite =
                 >:: test_rel_formula_mixed_unicode
               ]
        ; "Relational models"
-         >::: [ "parsing" >:: test_rel_model_parsing ]
+         >::: [
+                "parsing" >:: test_rel_model_parsing
+              ; "roundtrip: empty"
+                >:: test_rel_model_roundtrip_empty
+              ; "roundtrip: single state"
+                >:: test_rel_model_roundtrip_single
+              ; "roundtrip: multiple states"
+                >:: test_rel_model_roundtrip_multi_states
+              ; "roundtrip: multiple actions"
+                >:: test_rel_model_roundtrip_multi_actions
+              ; "roundtrip: empty aps"
+                >:: test_rel_model_roundtrip_empty_aps
+              ; "roundtrip: empty action"
+                >:: test_rel_model_roundtrip_empty_action
+              ; "pp roundtrip: single state"
+                >:: assert_roundtrip_rel
+                      "[s0: ({p}, [a: {s1, s2}])]"
+              ; "pp roundtrip: multiple states"
+                >:: assert_roundtrip_rel
+                      "[s0: ({p, q}, [a: {s1}]), s1: ({r}, [])]"
+              ; "pp roundtrip: multiple actions"
+                >:: assert_roundtrip_rel
+                      "[s0: ({p}, [a: {s1}, b: {s2, s3}])]"
+              ; "pp roundtrip: empty aps"
+                >:: assert_roundtrip_rel
+                      "[s0: ({}, [a: {s1}])]"
+              ; "pp roundtrip: empty action"
+                >:: assert_roundtrip_rel
+                      "[x: ({p1}, [{}: {x, y}])]"
+              ]
        ; "Probabilistic formulas"
          >::: [
                 "literals" >:: test_prob_formula_literals
@@ -231,7 +332,21 @@ let suite =
               ; "complex" >:: test_prob_formula_complex
               ]
        ; "Probabilistic models"
-         >::: [ "parsing" >:: test_prob_model_parsing ]
+         >::: [
+                "parsing" >:: test_prob_model_parsing
+              ; "roundtrip: empty"
+                >:: test_prob_model_roundtrip_empty
+              ; "roundtrip: single state"
+                >:: test_prob_model_roundtrip_single
+              ; "roundtrip: multiple actions"
+                >:: test_prob_model_roundtrip_multi_actions
+              ; "pp roundtrip: single state"
+                >:: assert_roundtrip_prob
+                      "[s0: ({p}, [a: [s1: 1/2, s2: 1/2]])]"
+              ; "pp roundtrip: multiple actions"
+                >:: assert_roundtrip_prob
+                      "[s0: ({p}, [a: [s1: 3/4], b: [s2: 1/3]])]"
+              ]
        ; "NNF conversion"
          >::: [ "probabilistic" >:: test_prob_nnf ]
        ]

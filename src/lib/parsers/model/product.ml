@@ -1,5 +1,6 @@
 open! Core
 open Angstrom
+open Naive_modcheck_coalg_parsers_common.Lexer
 
 module Product
     (A : Model_parser.SPEC)
@@ -17,5 +18,5 @@ struct
     {%string|(%{state_a_str}, %{state_b_str})|}
 
   let parser p =
-    lift2 (fun a b -> (a, b)) (A.parser p) (B.parser p)
+    kw "(" *> lift2 (fun a b -> (a, b)) (A.parser p <* kw ",") (B.parser p) <* kw ")"
 end
