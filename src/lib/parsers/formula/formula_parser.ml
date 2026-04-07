@@ -1,7 +1,7 @@
 open! Core
 open Naive_modcheck_coalg_common
 open Angstrom
-open Lexer
+open Naive_modcheck_coalg_parsers_common.Lexer
 (* ---- Chain combinators ---- *)
 
 let chain_unary ~op e =

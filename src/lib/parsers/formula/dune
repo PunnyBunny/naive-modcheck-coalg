@@ -1,0 +1,5 @@
+(library
+ (name naive_modcheck_coalg_parsers_formula)
+ (libraries core naive_modcheck_coalg_common naive_modcheck_coalg_parsers_common angstrom)
+ (preprocess
+  (pps ppx_jane)))

@@ -1,6 +1,6 @@
 open! Core
 open Angstrom
-open Lexer
+open Naive_modcheck_coalg_parsers_common.Lexer
 open Formula_parser
 module P = Make (Formula_ast.Relational_ast)
 

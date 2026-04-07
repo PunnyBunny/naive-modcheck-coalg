@@ -4,6 +4,7 @@ type t = Q.t
 
 let make n d = Q.make (Z.of_int n) (Z.of_int d)
 let zero = Q.zero
+let of_int = Q.of_int
 
 let sexp_of_t q =
   let n = Z.to_int (Q.num q) in

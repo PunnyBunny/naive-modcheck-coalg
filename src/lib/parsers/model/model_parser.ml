@@ -1,7 +1,7 @@
 open! Core
-open Naive_modcheck_coalg_common
 open Angstrom
-open Lexer
+open Naive_modcheck_coalg_common
+open Naive_modcheck_coalg_parsers_common.Lexer
 
 (* ---- Model-specific tokens ---- *)
 
@@ -32,20 +32,22 @@ let func_of key val_ =
 
 (* ---- Generic model parser (functor) ---- *)
 
-module Make (M : Model_intf.S) = struct
-  let make_model_parser
-      ~(transition : M.transition Angstrom.t) :
-      string -> M.t =
-    let state_data =
-      kw "("
-      *> lift2
-           (fun aps trans -> (aps, trans))
-           (list_of ap <* kw ",")
-           (func_of action transition)
-      <* kw ")"
-    in
+module type SPEC = sig
+  type 'a t [@@deriving sexp]
+
+  val to_string :
+    'a t -> to_string_parent:('a -> string) -> string
+
+  val parser : 'a Angstrom.t -> 'a t Angstrom.t
+end
+
+module Make (M : SPEC) = struct
+  let parse_model =
     let entry =
-      lift2 (fun s d -> (s, d)) (state <* kw ":") state_data
+      lift2
+        (fun s d -> (s, d))
+        (state <* kw ":")
+        (M.parser state)
     in
     let bracketed =
       kw "[" *> sep_by (kw ",") entry <* kw "]"

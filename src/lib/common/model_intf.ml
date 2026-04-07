@@ -3,64 +3,45 @@ open! Core
 (** Module type for models parameterized by transition type
 *)
 module type S = sig
-  type transition [@@deriving sexp]
+  type 'a t' [@@deriving sexp]
+  (** Functor for the coalgebra *)
 
-  type t =
-    ( State.t
-    , Ap.t list * (Action.t, transition) Hashtbl.Poly.t )
-    Hashtbl.Poly.t
+  type t = (State.t, State.t t') Hashtbl.Poly.t
   [@@deriving sexp]
 
   val states : t -> State.t list
   val pretty_print : t -> string
 end
 
+(* module type MODEL_FUNCTOR_SPECIFICATION = sig
+  type 'a t [@@deriving sexp]
+
+  val to_string :
+    'a t -> to_string_parent:('a -> string) -> string
+end *)
+
 (** Functor to create a model module from a transition type
 *)
-module Make (T : sig
-  type t [@@deriving sexp]
+(* module Make (T : MODEL_FUNCTOR_SPECIFICATION) :
+  S with type 'a t' = 'a T.t = struct
+  type 'a t' = 'a T.t [@@deriving sexp]
 
-  val to_string : t -> string
-end) : S with type transition = T.t = struct
-  type transition = T.t [@@deriving sexp]
-
-  type t =
-    ( State.t
-    , Ap.t list * (Action.t, transition) Hashtbl.Poly.t )
-    Hashtbl.Poly.t
+  type t = (State.t, State.t T.t) Hashtbl.Poly.t
   [@@deriving sexp]
 
   let states model = Hashtbl.keys model
 
-  let pretty_print model =
-    let pp_list pp_elem l =
-      let inner =
-        String.concat ~sep:", " (List.map ~f:pp_elem l)
-      in
-      {%string|{%{inner}}|}
-    in
-    let pp_action a =
-      if Action.is_empty a then "{}" else Action.to_string a
-    in
-    let pp_func entries =
-      let inner = String.concat ~sep:", " entries in
-      {%string|[%{inner}]|}
-    in
+  let pretty_print tbl =
     let entries =
-      Hashtbl.Poly.fold model ~init:[]
-        ~f:(fun ~key:state ~data:(aps, transitions) acc ->
-          let transition_entries =
-            Hashtbl.Poly.fold transitions ~init:[]
-              ~f:(fun ~key:action ~data:transition acc ->
-                let action = pp_action action in
-                let transition = T.to_string transition in
-                {%string|%{action}: %{transition}|} :: acc)
+      Hashtbl.Poly.fold tbl ~init:[]
+        ~f:(fun ~key:state ~data:succ acc ->
+          let state_str = State.to_string state in
+          let succ_str =
+            T.to_string succ
+              ~to_string_parent:State.to_string
           in
-          let aps = pp_list Ap.to_string aps in
-          let transitions = pp_func transition_entries in
-          let state = State.to_string state in
-          {%string|%{state}: (%{aps}, %{transitions})|}
-          :: acc)
+          {%string|%{state_str}: %{succ_str}|} :: acc)
     in
-    pp_func entries
-end
+    let inner = String.concat ~sep:", " entries in
+    {%string|[%{inner}]|}
+end *)
