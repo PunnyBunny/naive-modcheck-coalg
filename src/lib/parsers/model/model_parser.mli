@@ -20,7 +20,7 @@ val func_of :
 (* ---- Generic model parser (functor) ---- *)
 
 module type SPEC = sig
-  type 'a t [@@deriving sexp]
+  type 'a t [@@deriving sexp] (* The functor *)
 
   val to_string :
     'a t -> to_string_parent:('a -> string) -> string
@@ -28,7 +28,5 @@ module type SPEC = sig
   val parser : 'a Angstrom.t -> 'a t Angstrom.t
 end
 
-module Make (M : SPEC) : sig
-  val parse_model :
-    string -> (State.t, State.t M.t) Hashtbl.Poly.t
-end
+module Make (M : SPEC) :
+  Model.S with type 'a transition := 'a M.t
