@@ -16,30 +16,43 @@ let chain_binary ~op e =
 
 (* ---- Generic formula parser (functor) ---- *)
 
-module Make (M : Formula_ast.S) = struct
-  let make_formula_parser
-      ~(modal : M.t Angstrom.t -> M.t Angstrom.t) :
-      string -> M.t =
-    let resolve f =
-      let rec go bound (ast : M.t) : M.t =
-        match ast with
-        | Ap name ->
-            let s = Ap.to_string name in
-            if Set.mem bound s then Var (Var.of_string s)
-            else Ap name
-        | Not f -> Not (go bound f)
-        | And (a, b) -> And (go bound a, go bound b)
-        | Or (a, b) -> Or (go bound a, go bound b)
-        | Modal body -> Modal (M.modal_map (go bound) body)
-        | Mu (x, body) ->
-            Mu (x, go (Set.add bound (Var.to_string x)) body)
-        | Nu (x, body) ->
-            Nu (x, go (Set.add bound (Var.to_string x)) body)
-        | (True | False | Var _) as f -> f
-      in
-      go String.Set.empty f
-    in
-    let parser =
+module type SPEC = sig
+  type 'a t [@@deriving sexp]
+
+  val to_string :
+    'a t -> to_string_parent:('a -> string) -> string
+
+  val parser : formula:'a Angstrom.t -> 'a t Angstrom.t
+  val dual : 'a t -> 'a t
+  val map : f:('a -> 'b) -> 'a t -> 'b t
+end
+
+module Make (M : SPEC) = struct
+  type t =
+    | True
+    | False
+    | Var of Var.t
+    | And of t * t
+    | Or of t * t
+    | Modal of t M.t
+    | Mu of Var.t * t
+    | Nu of Var.t * t
+  [@@deriving sexp]
+
+  type t' =
+    | Not of t'
+    | True'
+    | False'
+    | Var' of Var.t
+    | And' of t' * t'
+    | Or' of t' * t'
+    | Modal' of t' M.t
+    | Mu' of Var.t * t'
+    | Nu' of Var.t * t'
+  [@@deriving sexp]
+
+  let parse_formula : string -> t =
+    let parser_with_negation =
       fix (fun formula ->
           let binder mk =
             (* Binds "X . f" part of mu/nu *)
@@ -49,41 +62,40 @@ module Make (M : Formula_ast.S) = struct
               (kw "." *> formula)
           in
           let word_atom =
-            word >>= fun word : M.t t ->
-            match word with
+            word >>= function
             | "true"
             | "tt" ->
-                return M.True
+                return True'
             | "false"
             | "ff" ->
-                return M.False
-            | "mu" -> binder (fun x body -> M.Mu (x, body))
-            | "nu" -> binder (fun x body -> M.Nu (x, body))
-            | s -> return (M.Ap (Ap.of_string s))
+                return False'
+            | "mu" -> binder (fun x body -> Mu' (x, body))
+            | "nu" -> binder (fun x body -> Nu' (x, body))
+            | s -> return (Var' (Var.of_string s))
           in
           let parens = kw "(" *> formula <* kw ")" in
           let atom =
             choice
               [
-                modal formula
+                (M.parser ~formula >>| fun m -> Modal' m)
               ; parens
-              ; kw "\u{22A4}" *> return M.True (* ⊤ *)
-              ; kw "\u{22A5}" *> return M.False (* ⊥ *)
+              ; kw "\u{22A4}" *> return True' (* ⊤ *)
+              ; kw "\u{22A5}" *> return False' (* ⊥ *)
               ; kw "\u{03BC}"
-                *> binder (fun x f -> M.Mu (x, f))
+                *> binder (fun x f -> Mu' (x, f))
                 (* μ *)
               ; kw "\u{03BD}"
-                *> binder (fun x f -> M.Nu (x, f))
+                *> binder (fun x f -> Nu' (x, f))
                 (* ν *)
               ; word_atom
               ]
           in
-          let not_ x = M.Not x in
+          let not_ x = Not x in
           let not_op =
             (kw "~" <|> kw "!" <|> kw "\u{00AC}") (* ¬ *)
             *> return not_
           in
-          let and_ x y = M.And (x, y) in
+          let and_ x y = And' (x, y) in
           let and_op =
             (kw "&&"
              (* && has to be before &, otherwise the second & will not be eaten *)
@@ -91,7 +103,7 @@ module Make (M : Formula_ast.S) = struct
             <|> kw "\u{2227}" (* ∧ *))
             *> return and_
           in
-          let or_ x y = M.Or (x, y) in
+          let or_ x y = Or' (x, y) in
           let or_op =
             (kw "||" <|> kw "|" <|> kw "\\/" (* \/ *)
             <|> kw "\u{2228}" (* ∨ *))
@@ -102,12 +114,38 @@ module Make (M : Formula_ast.S) = struct
           |> chain_binary ~op:and_op
           |> chain_binary ~op:or_op)
     in
+    let convert_to_nnf =
+      let rec negate = function
+        | Not f -> f
+        | True' -> False'
+        | False' -> True'
+        | Var' v -> Var' v
+        | And' (f, g) -> Or' (negate f, negate g)
+        | Or' (f, g) -> And' (negate f, negate g)
+        | Modal' m -> Modal' (M.map ~f:negate (M.dual m))
+        | Mu' (x, f) -> Nu' (x, negate f)
+        | Nu' (x, f) -> Mu' (x, negate f)
+      in
+      let rec to_nnf = function
+        | Not f -> to_nnf (negate f)
+        | True' -> True
+        | False' -> False
+        | Var' v -> Var v
+        | And' (f, g) -> And (to_nnf f, to_nnf g)
+        | Or' (f, g) -> Or (to_nnf f, to_nnf g)
+        | Modal' m -> Modal (M.map ~f:to_nnf m)
+        | Mu' (x, f) -> Mu (x, to_nnf f)
+        | Nu' (x, f) -> Nu (x, to_nnf f)
+      in
+      to_nnf
+    in
     fun input ->
       match
         parse_string ~consume:Consume.All
-          (spacing *> parser) input
+          (spacing *> parser_with_negation)
+          input
       with
-      | Ok f -> resolve f
+      | Ok f -> convert_to_nnf f
       | Error msg ->
           failwith
             (Printf.sprintf "Formula parse error: %s" msg)

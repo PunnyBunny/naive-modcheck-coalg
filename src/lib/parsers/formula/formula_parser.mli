@@ -1,10 +1,16 @@
 open! Core
+open Naive_modcheck_coalg_common
 
-module Make (M : Formula_ast.S) : sig
-  val make_formula_parser :
-    modal:(M.t Angstrom.t -> M.t Angstrom.t) -> string -> M.t
-  (** [make_formula_parser ~modal] returns a parser for
-      formulas, where [modal] is a function that takes a
-      formula parser and returns a parser for modal
-      formulas. *)
+module type SPEC = sig
+  type 'a t [@@deriving sexp]
+
+  val to_string :
+    'a t -> to_string_parent:('a -> string) -> string
+
+  val parser : formula:'a Angstrom.t -> 'a t Angstrom.t
+  val dual : 'a t -> 'a t
+  val map : f:('a -> 'b) -> 'a t -> 'b t
 end
+
+module Make (M : SPEC) :
+  Formula.S with type 'a modality := 'a M.t
