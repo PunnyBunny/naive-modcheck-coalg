@@ -1,10 +1,5 @@
 (* T(X) = P(Ap) * P(X)^A *)
 open! Core
-open Product
-open Constant
-open Powerset
-open Exp_by_set
-open Composition
 open Angstrom
 open Naive_modcheck_coalg_common
 open Naive_modcheck_coalg_parsers_common.Lexer
@@ -37,10 +32,10 @@ module Actions = struct
 end
 
 module Model =
-  Product
-    (Constant
+  Product.Make
+    (Constant.Make
        (Ap_list))
-       (Composition (Exp_by_set (Actions)) (Powerset))
+       (Composition.Make (Exp_by_set.Make (Actions)) (Powerset.Make))
 
 module Parser = Model_parser.Make (Model)
 

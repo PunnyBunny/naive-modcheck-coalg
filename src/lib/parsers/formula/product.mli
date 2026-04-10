@@ -1,4 +1,4 @@
-module Product : functor
+module Make : functor
   (A : Formula_parser.SPEC)
   (B : Formula_parser.SPEC)
   -> sig

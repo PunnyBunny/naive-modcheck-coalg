@@ -8,7 +8,7 @@ module type CONSTANT_SPEC = sig
   val parser : t Angstrom.t
 end
 
-module Constant (A : CONSTANT_SPEC) = struct
+module Make (A : CONSTANT_SPEC) = struct
   type 'a t = Normal of A.t | Not of A.t [@@deriving sexp]
 
   let to_string state ~to_string_parent:_ =

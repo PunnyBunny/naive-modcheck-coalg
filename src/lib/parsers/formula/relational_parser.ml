@@ -1,9 +1,4 @@
 open! Core
-open Product
-open Constant
-open Powerset
-open Exp_by_set
-open Composition
 open Naive_modcheck_coalg_common
 open Naive_modcheck_coalg_parsers_common.Lexer
 open Angstrom
@@ -21,7 +16,8 @@ module Actions = struct
 end
 
 module Formula_spec =
-  Product
-    (Constant
+  Product.Make
+    (Constant.Make
        (Ap))
-       (Composition (Exp_by_set (Actions)) (Powerset))
+       (Composition.Make
+          (Exp_by_set.Make (Actions)) (Powerset.Make ()))

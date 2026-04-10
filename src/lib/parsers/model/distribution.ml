@@ -3,7 +3,7 @@ open Angstrom
 open Naive_modcheck_coalg_parsers_common.Lexer
 open Naive_modcheck_coalg_common
 
-module Distribution = struct
+module Make = struct
   type 'a t = ('a, Frac.t) Hashtbl.Poly.t [@@deriving sexp]
 
   let to_string tbl ~to_string_parent =

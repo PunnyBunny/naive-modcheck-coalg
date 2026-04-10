@@ -2,7 +2,7 @@ open! Core
 open Angstrom
 open Naive_modcheck_coalg_parsers_common.Lexer
 
-module Powerset = struct
+module Make = struct
   type 'a t = 'a list [@@deriving sexp]
 
   let to_string states ~to_string_parent =

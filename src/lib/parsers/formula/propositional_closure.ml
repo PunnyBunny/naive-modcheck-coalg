@@ -9,7 +9,7 @@ let chain_binary ~op e =
       e >>| fun r -> (f, r) )
   >>| List.fold_left ~init ~f:(fun l (f, r) -> f l r)
 
-module Propositional_closure (M : Formula_parser.SPEC) =
+module Make (M : Formula_parser.SPEC) =
 struct
   type 'a t =
     | True

@@ -3,7 +3,7 @@ open Angstrom
 open Naive_modcheck_coalg_parsers_common.Lexer
 open Naive_modcheck_coalg_common
 
-module Distribution = struct
+module Make () = struct
   type 'a t =
     | GT of Frac.t * 'a
     | LT of Frac.t * 'a

@@ -6,5 +6,5 @@ module type EXP_BY_SET_SPEC = sig
   val parser : t Angstrom.t
 end
 
-module Exp_by_set (A : EXP_BY_SET_SPEC) :
+module Make (A : EXP_BY_SET_SPEC) :
   Formula_parser.SPEC with type 'a t = A.t * 'a

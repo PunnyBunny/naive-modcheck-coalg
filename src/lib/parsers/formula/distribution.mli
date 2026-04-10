@@ -1,7 +1,7 @@
 open! Core
 open Naive_modcheck_coalg_common
 
-module Distribution : sig
+module Make () : sig
   type 'a t =
     | GT of Frac.t * 'a
     | LT of Frac.t * 'a

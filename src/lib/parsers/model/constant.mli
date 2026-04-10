@@ -6,5 +6,5 @@ module type CONSTANT_SPEC = sig
   val parser : t Angstrom.t
 end
 
-module Constant (A : CONSTANT_SPEC) :
+module Make (A : CONSTANT_SPEC) :
   Model_parser.SPEC with type 'a t = A.t

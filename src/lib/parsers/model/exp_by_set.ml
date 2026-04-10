@@ -8,7 +8,7 @@ module type EXP_BY_SET_SPEC = sig
   val parser : t Angstrom.t
 end
 
-module Exp_by_set (A : EXP_BY_SET_SPEC) = struct
+module Make (A : EXP_BY_SET_SPEC) = struct
   type 'a t = (A.t, 'a) Hashtbl.Poly.t [@@deriving sexp]
 
   let to_string tbl ~to_string_parent =

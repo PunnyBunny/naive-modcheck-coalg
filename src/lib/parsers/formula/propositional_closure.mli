@@ -1,4 +1,4 @@
-module Propositional_closure : (M : Formula_parser.SPEC)
+module Make : (M : Formula_parser.SPEC)
   -> sig
   type 'a t =
     | True

@@ -1,11 +1,10 @@
 open! Core
-open Propositional_closure
 
-module Composition
+module Make
     (A : Formula_parser.SPEC)
     (B : Formula_parser.SPEC) =
 struct
-  module B_closed = Propositional_closure (B)
+  module B_closed = Propositional_closure.Make (B)
 
   type 'a t = 'a B_closed.t A.t [@@deriving sexp]
 

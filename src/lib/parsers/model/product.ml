@@ -2,7 +2,7 @@ open! Core
 open Angstrom
 open Naive_modcheck_coalg_parsers_common.Lexer
 
-module Product
+module Make
     (A : Model_parser.SPEC)
     (B : Model_parser.SPEC) =
 struct

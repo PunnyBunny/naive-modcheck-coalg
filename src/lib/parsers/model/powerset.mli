@@ -1,2 +1,2 @@
 open! Core
-module Powerset : Model_parser.SPEC with type 'a t = 'a list
+module Make : Model_parser.SPEC with type 'a t = 'a list

@@ -1,6 +1,6 @@
 open! Core
 
-module Composition
+module Make
     (A : Model_parser.SPEC)
     (B : Model_parser.SPEC) =
 struct

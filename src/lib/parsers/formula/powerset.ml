@@ -2,7 +2,7 @@ open! Core
 open Angstrom
 open Naive_modcheck_coalg_parsers_common.Lexer
 
-module Powerset = struct
+module Make () = struct
   type 'a t = Box of 'a | Diamond of 'a [@@deriving sexp]
 
   let to_string fmla ~to_string_parent =
