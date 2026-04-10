@@ -1,6 +1,6 @@
 open! Core
 open Naive_modcheck_coalg_common
-open Naive_modcheck_coalg_model_parsers
+open Naive_modcheck_coalg_parsers_model
 open Naive_modcheck_coalg_parsers_formula
 
 (** Common signature for all logics *)
@@ -35,9 +35,6 @@ module type S = sig
     -> state:State.t
     -> modal_formula:Formula.t
     -> (Formula.t, State.t) Game.one_step_game
-
-  val is_atom_in_state :
-    model:Model.t -> state:State.t -> atom:Ap.t -> bool
 
   val get_states : model:Model.t -> State.t list
   val get_helper_functions : Formula.t -> helper_functions
@@ -81,9 +78,6 @@ module type LOGIC_SPECIFICATION = sig
 
   module Formula :
     Formula.S with type 'a modality = 'a Formula_spec.t
-
-  val is_atom_in_state :
-    model:Model.t -> state:State.t -> atom:Ap.t -> bool
 
   val one_step_satisfaction :
        model:Model.t
