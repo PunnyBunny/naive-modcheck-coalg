@@ -19,5 +19,4 @@ module Formula_spec =
   Product.Make
     (Constant.Make
        (Ap))
-       (Composition.Make
-          (Exp_by_set.Make (Actions)) (Powerset))
+       (Exp_by_set.Make (Actions) (Powerset))

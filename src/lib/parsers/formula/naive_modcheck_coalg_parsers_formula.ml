@@ -9,4 +9,5 @@ module Formula_parsers = struct
   module Constant = Constant
   module Distribution = Distribution
   module Powerset = Powerset
+  module Propositional_closure = Propositional_closure
 end
