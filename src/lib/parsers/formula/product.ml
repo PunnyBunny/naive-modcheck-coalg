@@ -8,21 +8,21 @@ module Make
 struct
   type 'a t = A of 'a A.t | B of 'a B.t [@@deriving sexp]
 
-  let to_string formula ~to_string_parent =
+  let to_string formula ~to_string_inner =
     match formula with
     | A a ->
-        let a_str = A.to_string a ~to_string_parent in
+        let a_str = A.to_string a ~to_string_inner in
         {%string|[@1] (%{a_str})|}
     | B b ->
-        let b_str = B.to_string b ~to_string_parent in
+        let b_str = B.to_string b ~to_string_inner in
         {%string|[@2] (%{b_str})|}
 
-  let parser ~formula =
+  let parser ~formula_inner =
     let a =
-      kw "[@1]" *> A.parser ~formula >>| fun x -> A x
+      kw "[@1]" *> A.parser ~formula_inner >>| fun x -> A x
     in
     let b =
-      kw "[@2]" *> B.parser ~formula >>| fun x -> B x
+      kw "[@2]" *> B.parser ~formula_inner >>| fun x -> B x
     in
     a <|> b
 

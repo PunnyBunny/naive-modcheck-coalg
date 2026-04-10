@@ -5,7 +5,7 @@ open Naive_modcheck_coalg_parsers_common.Lexer
 module Make () = struct
   type 'a t = Box of 'a | Diamond of 'a [@@deriving sexp]
 
-  let to_string fmla ~to_string_parent =
+  let to_string fmla ~to_string_inner =
     let op_str =
       match fmla with
       | Box _ -> "[]"
@@ -17,13 +17,13 @@ module Make () = struct
       | Diamond f ->
           f
     in
-    let fmla'_str = to_string_parent fmla' in
+    let fmla'_str = to_string_inner fmla' in
     {%string|%{op_str}(%{fmla'_str})|}
 
-  let parser ~formula =
-    let box = lift (fun f -> Box f) (kw "[]" *> formula) in
+  let parser ~formula_inner =
+    let box = lift (fun f -> Box f) (kw "[]" *> formula_inner) in
     let diamond =
-      lift (fun f -> Diamond f) (kw "<>" *> formula)
+      lift (fun f -> Diamond f) (kw "<>" *> formula_inner)
     in
     box <|> diamond
 

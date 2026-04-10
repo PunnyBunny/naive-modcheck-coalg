@@ -23,9 +23,9 @@ module type SPEC = sig
   type 'a t [@@deriving sexp] (* The functor *)
 
   val to_string :
-    'a t -> to_string_parent:('a -> string) -> string
+    'a t -> to_string_inner:('a -> string) -> string
 
-  val parser : 'a Angstrom.t -> 'a t Angstrom.t
+  val parser : model_inner:'a Angstrom.t -> 'a t Angstrom.t
 end
 
 module Make (M : SPEC) :

@@ -36,9 +36,9 @@ module type SPEC = sig
   type 'a t [@@deriving sexp]
 
   val to_string :
-    'a t -> to_string_parent:('a -> string) -> string
+    'a t -> to_string_inner:('a -> string) -> string
 
-  val parser : 'a Angstrom.t -> 'a t Angstrom.t
+  val parser : model_inner:'a Angstrom.t -> 'a t Angstrom.t
 end
 
 module Make (M : SPEC) = struct
@@ -56,7 +56,7 @@ module Make (M : SPEC) = struct
           let state_str = State.to_string state in
           let succ_str =
             M.to_string succ
-              ~to_string_parent:State.to_string
+              ~to_string_inner:State.to_string
           in
           {%string|%{state_str}: %{succ_str}|} :: acc)
     in
@@ -68,7 +68,7 @@ module Make (M : SPEC) = struct
       lift2
         (fun s d -> (s, d))
         (state <* kw ":")
-        (M.parser state)
+        (M.parser ~model_inner:state)
     in
     let bracketed =
       kw "[" *> sep_by (kw ",") entry <* kw "]"

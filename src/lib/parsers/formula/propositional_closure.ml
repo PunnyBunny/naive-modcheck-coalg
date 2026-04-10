@@ -9,8 +9,7 @@ let chain_binary ~op e =
       e >>| fun r -> (f, r) )
   >>| List.fold_left ~init ~f:(fun l (f, r) -> f l r)
 
-module Make (M : Formula_parser.SPEC) =
-struct
+module Make (M : Formula_parser.SPEC) = struct
   type 'a t =
     | True
     | False
@@ -19,21 +18,21 @@ struct
     | Modal of 'a M.t
   [@@deriving sexp]
 
-  let rec to_string formula ~to_string_parent =
+  let rec to_string formula ~to_string_inner =
     match formula with
     | True -> "true"
     | False -> "false"
     | And (a, b) ->
-        let a_str = to_string ~to_string_parent a in
-        let b_str = to_string ~to_string_parent b in
+        let a_str = to_string ~to_string_inner a in
+        let b_str = to_string ~to_string_inner b in
         {%string|%{a_str} && %{b_str}|}
     | Or (a, b) ->
-        let a_str = to_string ~to_string_parent a in
-        let b_str = to_string ~to_string_parent b in
+        let a_str = to_string ~to_string_inner a in
+        let b_str = to_string ~to_string_inner b in
         {%string|%{a_str} || %{b_str}|}
-    | Modal body -> M.to_string body ~to_string_parent
+    | Modal body -> M.to_string body ~to_string_inner
 
-  let parser ~formula =
+  let parser ~formula_inner =
     fix (fun closed_formula ->
         let word_atom =
           kw "true" *> return True
@@ -45,7 +44,7 @@ struct
         let atom =
           choice
             [
-              (M.parser ~formula >>| fun m -> Modal m)
+              (M.parser ~formula_inner >>| fun m -> Modal m)
             ; parens
             ; kw "\u{22A4}" *> return True (* ⊤ *)
             ; kw "\u{22A5}" *> return False (* ⊥ *)

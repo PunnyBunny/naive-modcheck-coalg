@@ -11,13 +11,13 @@ end
 module Make (A : CONSTANT_SPEC) = struct
   type 'a t = Normal of A.t | Not of A.t [@@deriving sexp]
 
-  let to_string state ~to_string_parent:_ =
+  let to_string state ~to_string_inner:_ =
     match state with
     | Normal a -> A.to_string a
     | Not a -> "~" ^ A.to_string a
 
   (* TODO: review syntax ~ *)
-  let parser ~formula:_ =
+  let parser ~formula_inner:_ =
     let normal = A.parser >>| fun a -> Normal a in
     let not_ = kw "~" *> A.parser >>| fun a -> Not a in
     normal <|> not_

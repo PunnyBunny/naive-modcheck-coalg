@@ -13,7 +13,7 @@ module Make () = struct
 
   (* e.g. [>=3/4] phi *)
 
-  let to_string fmla ~to_string_parent =
+  let to_string fmla ~to_string_inner =
     let op_str =
       match fmla with
       | GT _ -> ">"
@@ -29,11 +29,11 @@ module Make () = struct
       | LE (frac, fmla') ->
           (frac, fmla')
     in
-    let fmla'_str = to_string_parent fmla' in
+    let fmla'_str = to_string_inner fmla' in
     let frac_str = Frac.to_string frac in
     {%string|%[%{op_str} %{frac_str}] (%{fmla'_str})|}
 
-  let parser ~formula =
+  let parser ~formula_inner =
     let frac =
       lift2 Frac.make (integer <* kw "/") integer
       <|> lift Frac.of_int integer
@@ -54,7 +54,7 @@ module Make () = struct
          <|> kw ">" *> return (dispatch `GT)
          <|> kw "<" *> return (dispatch `LT)))
       (frac <* kw "]")
-      formula
+      formula_inner
 
   let dual = function
     | GT (frac, x) -> LE (frac, x)

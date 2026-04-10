@@ -9,8 +9,6 @@ end
 module Make (A : CONSTANT_SPEC) = struct
   type 'a t = A.t [@@deriving sexp]
 
-  let to_string state ~to_string_parent:_ =
-    A.to_string state
-
-  let parser _ = A.parser
+  let to_string state ~to_string_inner:_ = A.to_string state
+  let parser ~model_inner:_ = A.parser
 end

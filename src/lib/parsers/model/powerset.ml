@@ -5,13 +5,12 @@ open Naive_modcheck_coalg_parsers_common.Lexer
 module Make = struct
   type 'a t = 'a list [@@deriving sexp]
 
-  let to_string states ~to_string_parent =
+  let to_string states ~to_string_inner =
     let inner =
       String.concat ~sep:", "
-        (List.map ~f:to_string_parent states)
+        (List.map ~f:to_string_inner states)
     in
     {%string|{%{inner}}|}
-  
-  let parser p = kw "{" *> sep_by (kw ",") p <* kw "}"
-end
 
+  let parser ~model_inner = kw "{" *> sep_by (kw ",") model_inner <* kw "}"
+end
