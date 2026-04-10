@@ -1,6 +1,4 @@
 module Formula_parser = Formula_parser
-module Relational_parser = Relational_parser
-module Probabilistic_parser = Probabilistic_parser
 
 module Formula_parsers = struct
   module Composition = Composition

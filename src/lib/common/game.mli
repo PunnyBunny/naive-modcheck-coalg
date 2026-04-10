@@ -10,14 +10,17 @@ module Priority : sig
 end
 
 module Player : sig
-  type t = Eloise | Abelard [@@deriving sexp]
+  type t = Eloise | Abelard [@@deriving sexp, equal]
 end
 
-type ('formula, 'state) one_step_game = {
-    game :
-      ( ('formula, 'state) node
-      , Player.t * Priority.t * ('formula, 'state) node list
-      )
-      Hashtbl.Poly.t
-  ; exit_nodes : ('formula * 'state) list
-}
+(* type ('formula, 'state, 'inner) one_step_node =
+  | Start
+  | Inner of 'inner
+  | Exit of ('formula * 'state)
+
+type ('formula, 'state, 'inner) one_step_game =
+  ( ('formula, 'state, 'inner) one_step_node
+  , Player.t
+    * Priority.t
+    * ('formula, 'state, 'inner) one_step_node list )
+  Hashtbl.Poly.t *)
