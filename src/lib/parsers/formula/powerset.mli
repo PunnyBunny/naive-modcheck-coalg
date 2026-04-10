@@ -1,7 +1,5 @@
 open! Core
 
-module Make () : sig
-  type 'a t = Box of 'a | Diamond of 'a [@@deriving sexp]
+type 'a t = Box of 'a | Diamond of 'a [@@deriving sexp]
 
-  include Formula_parser.SPEC with type 'a t := 'a t
-end
+include Formula_parser.SPEC with type 'a t := 'a t

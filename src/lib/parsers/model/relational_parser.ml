@@ -13,14 +13,12 @@ module Ap_list = struct
     {%string|{%{inner}}|}
 
   let parser =
-    kw "{"
-    *> sep_by (kw ",") (word >>| Ap.of_string)
+    kw "{" *> sep_by (kw ",") (word >>| Ap.of_string)
     <* kw "}"
 end
 
 module Actions = struct
-  type t = Action.t
-  [@@deriving sexp, hash, compare]
+  type t = Action.t [@@deriving sexp, hash, compare]
 
   let to_string a =
     if Action.is_empty a then "{}" else Action.to_string a
@@ -35,7 +33,8 @@ module Model =
   Product.Make
     (Constant.Make
        (Ap_list))
-       (Composition.Make (Exp_by_set.Make (Actions)) (Powerset.Make))
+       (Composition.Make
+          (Exp_by_set.Make (Actions)) (Powerset))
 
 module Parser = Model_parser.Make (Model)
 

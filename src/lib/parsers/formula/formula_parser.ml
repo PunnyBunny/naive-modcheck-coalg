@@ -30,6 +30,8 @@ module type SPEC = sig
 end
 
 module Make (M : SPEC) = struct
+  type 'a modality = 'a M.t [@@deriving sexp]
+
   type t =
     | True
     | False

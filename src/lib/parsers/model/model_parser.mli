@@ -29,4 +29,4 @@ module type SPEC = sig
 end
 
 module Make (M : SPEC) :
-  Model.S with type 'a transition := 'a M.t
+  Model.S with type 'a transition = 'a M.t
