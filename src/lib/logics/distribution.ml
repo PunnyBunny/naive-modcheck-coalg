@@ -2,15 +2,14 @@ open! Core
 open Naive_modcheck_coalg_common
 open Naive_modcheck_coalg_parsers_model
 open Naive_modcheck_coalg_parsers_formula
+module Model_spec = Model_parsers.Distribution
+module Formula_spec = Formula_parsers.Distribution
 
-module Make (M : sig
+module One_step (M : sig
   type formula
   type state
 end) =
 struct
-  module Model_spec = Model_parsers.Distribution
-  module Formula_spec = Formula_parsers.Distribution
-
   type inner_node = M.state list
 
   type one_step_node =
@@ -23,11 +22,6 @@ struct
     , Game.Player.t * Game.Priority.t * one_step_node list
     )
     Hashtbl.Poly.t
-
-  let one_step_satisfaction ~model:_ ~box_or_diamond:_
-      ~state:_ ~states:_ ~action:_ =
-    (* Placeholder: will be implemented with actual game logic *)
-    true
 
   let one_step_game
       ~transition:(dist : M.state Model_spec.t)

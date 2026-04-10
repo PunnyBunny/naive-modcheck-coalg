@@ -1,2 +1,2 @@
 open! Core
-module Make : Logic_intf.LOGIC_SPECIFICATION
+include Logic_intf.LOGIC_SPECIFICATION
