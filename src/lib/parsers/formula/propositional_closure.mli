@@ -1,5 +1,4 @@
-module Make : (M : Formula_parser.SPEC)
-  -> sig
+module Make : (M : Formula_parser.SPEC) -> sig
   type 'a t =
     | True
     | False
