@@ -8,19 +8,33 @@ module type S = sig
   module Model_spec : Model_parser.SPEC
   module Formula_spec : Formula_parser.SPEC
 
-  module Model :
+  (* module Model :
     Model.S with type 'a transition = 'a Model_spec.t
 
   module Formula :
-    Formula.S with type 'a modality = 'a Formula_spec.t
+    Formula.S with type 'a modality = 'a Formula_spec.t *)
 
-  type helper_functions = {
+  (* type helper_functions = {
       theta : Var.t -> Formula.t option
           (** Returns the Mu/Nu subformula that contains a
               given variable *)
     ; alternation_depth : Var.t -> int option
           (** Returns ad(theta(X)) for a variable X *)
   }
+
+  
+  type inner_node
+
+  type one_step_node =
+    | Start
+    | Inner of inner_node
+    | Exit of M.formula * M.state
+
+  type one_step_game_t =
+    ( one_step_node
+    , Game.Player.t * Game.Priority.t * one_step_node list
+    )
+    Hashtbl.Poly.t
 
   val one_step_satisfaction :
        model:Model.t
@@ -33,8 +47,11 @@ module type S = sig
   val one_step_game :
        model:Model.t
     -> state:State.t
-    -> modal_formula:Formula.t
-    -> (Formula.t, State.t) Game.one_step_game
+    -> modal_formula:Formula.t Formula.modality
+    -> ( 'formula
+       , 'state
+       , ('formula, 'state) inner_node )
+       one_step_game_t
 
   val get_states : model:Model.t -> State.t list
   val get_helper_functions : Formula.t -> helper_functions
@@ -42,7 +59,7 @@ module type S = sig
   val parse_formula : string -> Formula.t
   (** Parse a formula from a string *)
 
-  val parse_model : string -> Model.t
+  val parse_model : string -> Model.t *)
   (** Parse a model from a string *)
 end
 
@@ -69,37 +86,41 @@ Plan:
   * regress
   * think about the syntax enabled by this, e.g. remove atoms and encode with (\otimes At)
 *)
-module type LOGIC_SPECIFICATION = sig
+module type LOGIC_SPECIFICATION = functor
+  (M : sig
+     type formula
+     type state (* TODO: abstract this module argument *)
+   end)
+  -> sig
   module Model_spec : Model_parser.SPEC
   module Formula_spec : Formula_parser.SPEC
 
-  module Model :
-    Model.S with type 'a transition = 'a Model_spec.t
+  type inner_node
 
-  module Formula :
-    Formula.S with type 'a modality = 'a Formula_spec.t
+  type one_step_node =
+    | Start
+    | Inner of inner_node
+    | Exit of M.formula * M.state
 
-  val one_step_satisfaction :
-       model:Model.t
-    -> box_or_diamond:[ `Box | `Diamond ]
-    -> state:State.t
-    -> states:State.t list
-    -> action:Action.t
-    -> bool
+  type one_step_game_t =
+    ( one_step_node
+    , Game.Player.t * Game.Priority.t * one_step_node list
+    )
+    Hashtbl.Poly.t
 
+  (* 'state = X, 'formula = L *)
   val one_step_game :
-       model:Model.t
-    -> state:State.t
-    -> modal_formula:Formula.t
-    -> (Formula.t, State.t) Game.one_step_game
+       transition:M.state Model_spec.t
+    -> modal_formula:M.formula Formula_spec.t
+    -> one_step_game_t
 end
 
 module type Intf = sig
   module type S = S
   module type LOGIC_SPECIFICATION = LOGIC_SPECIFICATION
 
-  module Make (Spec : LOGIC_SPECIFICATION) :
+  (* module Make (Spec : LOGIC_SPECIFICATION) :
     S
       with module Model_spec = Spec.Model_spec
-       and module Formula_spec = Spec.Formula_spec
+       and module Formula_spec = Spec.Formula_spec *)
 end
