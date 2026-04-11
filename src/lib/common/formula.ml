@@ -12,7 +12,7 @@ module type S = sig
     | Modal of t modality
     | Mu of Var.t * t
     | Nu of Var.t * t
-  [@@deriving sexp]
+  [@@deriving sexp, to_string]
 
   val parse_formula : string -> t
 end

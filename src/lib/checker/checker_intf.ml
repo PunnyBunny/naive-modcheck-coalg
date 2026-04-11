@@ -4,7 +4,9 @@ open Naive_modcheck_coalg_logics
 
 type game_data = {
     num_nodes : int
-  ; node_labels : string array
+  ; node_formulas : string array
+  ; node_states_or_transitions : string array
+  ; node_one_step_info : string array
   ; node_owners : string array
         (** ["Eloise" | "Abelard"] per node *)
   ; node_priorities : int array
@@ -13,10 +15,7 @@ type game_data = {
         (** ["Eloise" | "Abelard"] per node *)
   ; strategy : int option array
         (** Strategy edge target, if any *)
-  ; node_is_modal : bool array
-  ; node_states : string list array
-        (** State(s) per node: singleton for formula nodes,
-            multiple for modal *)
+  ; node_is_one_step : bool array
   ; starting_node : int
   ; result : bool
 }
