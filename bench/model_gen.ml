@@ -1,7 +1,7 @@
 open Core
-open Naive_modcheck_coalg_common
-open Naive_modcheck_coalg_logics
 open Cmdliner
+
+(* TODO: change into Model constructors not strings *)
 
 let generators =
   [
@@ -48,38 +48,31 @@ let print_pgsolver oc pg = Paritygame.(output_game oc pg)
 
 let print_model oc pg =
   let open Paritygame in
-  let model : Logics.Relational.Relational_model.t =
-    Hashtbl.Poly.create ()
-  in
+  let entries = ref [] in
   pg_iterate
     (fun node (prio, owner, succs, _preds, _desc) ->
-      let state =
-        State.of_string [%string "s%{node#Int}"]
+      let owner_ap =
+        if Poly.(owner = Paritygame.plr_Even) then "even"
+        else "odd"
       in
-      let aps =
-        [
-          Ap.of_string
-            (if Poly.(owner = Paritygame.plr_Even) then
-               "even"
-             else "odd")
-        ; Ap.of_string [%string "p%{prio#Int}"]
-        ]
-      in
-      let succ_list =
+      let aps = [%string "%{owner_ap}, p%{prio#Int}"] in
+      let succ_states =
         ns_fold
-          (fun acc s ->
-            State.of_string [%string "s%{s#Int}"] :: acc)
+          (fun acc s -> [%string "s%{s#Int}"] :: acc)
           [] succs
+        |> List.rev
       in
-      let transitions = Hashtbl.Poly.create () in
-      Hashtbl.Poly.set transitions
-        ~key:(Action.of_string "")
-        ~data:succ_list;
-      Hashtbl.Poly.set model ~key:state
-        ~data:(aps, transitions))
+      let succs_str = String.concat ~sep:", " succ_states in
+      let entry =
+        [%string
+          "s%{node#Int}: ({%{aps}}, [{}: {%{succs_str}}])"]
+      in
+      entries := entry :: !entries)
     pg;
-  Printf.fprintf oc "%s\n"
-    (Logics.Relational.Relational_model.pretty_print model)
+  let body =
+    !entries |> List.rev |> String.concat ~sep:", "
+  in
+  Printf.fprintf oc "[%s]\n" body
 
 let run gen size format outdir =
   register_all ();

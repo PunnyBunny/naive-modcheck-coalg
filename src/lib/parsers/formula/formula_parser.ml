@@ -56,8 +56,7 @@ module Make (M : SPEC) = struct
         [%string "(mu %{Var.to_string x} . %{to_string f})"]
     | Nu (x, f) ->
         [%string "(nu %{Var.to_string x} . %{to_string f})"]
-    | Modal m ->
-        "(" ^ M.to_string m ~to_string_inner:to_string ^ ")"
+    | Modal m -> M.to_string m ~to_string_inner:to_string
 
   type t' =
     | Not of t'
