@@ -19,11 +19,8 @@ type test_setup = {
 
 let setup _ctxt =
   let model = Logics.Relational.parse_model rel_model_str in
-  let formula_ast =
-    Logics.Relational.parse_formula rel_formula_str
-  in
   let formula =
-    Logics.Relational.formula_of_ast formula_ast
+    Logics.Relational.parse_formula rel_formula_str
   in
   let game_data =
     Checkers.Relational.model_check_full ~verbose:false
@@ -65,14 +62,17 @@ let test_json_structure ctxt =
   (* All nodes have required fields *)
   List.iter nodes ~f:(fun n ->
       ignore (n |> member "id" |> to_int : int);
-      ignore (n |> member "label" |> to_string : string);
+      ignore (n |> member "formula" |> to_string : string);
       ignore (n |> member "owner" |> to_string : string);
       ignore (n |> member "priority" |> to_int : int);
       ignore (n |> member "winner" |> to_string : string);
       ignore (n |> member "isStart" |> to_bool : bool);
-      let states = n |> member "states" |> to_list in
-      assert_bool "states should be non-empty"
-        (List.length states > 0));
+      ignore (n |> member "isOneStep" |> to_bool : bool);
+      ignore
+        (n |> member "oneStepInfo" |> to_string : string);
+      ignore
+        (n |> member "stateOrTransition" |> to_string
+          : string));
   (* Edges *)
   let edges = parsed |> member "edges" |> to_list in
   assert_bool "should have edges" (List.length edges > 0);
@@ -91,6 +91,7 @@ let test_json_structure ctxt =
   assert_equal ~printer:Int.to_string 1
     (List.length start_nodes)
 
+(* TODO: fix the test *)
 let test_game_data_result ctxt =
   let { model; formula; game_data } =
     bracket setup teardown ctxt
@@ -105,7 +106,7 @@ let test_game_data_result ctxt =
     game_data.result;
   (* num_nodes matches array lengths *)
   assert_equal ~printer:Int.to_string game_data.num_nodes
-    (Array.length game_data.node_labels);
+    (Array.length game_data.node_formulas);
   assert_equal ~printer:Int.to_string game_data.num_nodes
     (Array.length game_data.node_owners);
   assert_equal ~printer:Int.to_string game_data.num_nodes
@@ -117,7 +118,7 @@ let test_game_data_result ctxt =
   assert_equal ~printer:Int.to_string game_data.num_nodes
     (Array.length game_data.strategy);
   assert_equal ~printer:Int.to_string game_data.num_nodes
-    (Array.length game_data.node_states);
+    (Array.length game_data.node_states_or_transitions);
   (* starting_node is in range *)
   assert_bool "starting_node in range"
     (game_data.starting_node >= 0

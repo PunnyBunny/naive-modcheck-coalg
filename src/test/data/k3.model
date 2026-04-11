@@ -1,3 +1,3 @@
-(* y : {} in the original is fixed to proper tuple format *)
-x : ({}, [{} : {x}, bubi : {y}])
+// y : {} in the original is fixed to proper tuple format 
+x : ({}, [a : {x}, bubi : {y}])
 y : ({}, [])

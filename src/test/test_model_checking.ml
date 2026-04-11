@@ -54,9 +54,7 @@ let tests_from_pair (model_path, test_path) =
             in
             fun formula_str point expected _ ->
               let formula =
-                Logics.Relational.formula_of_ast
-                  (Logics.Relational.parse_formula
-                     formula_str)
+                Logics.Relational.parse_formula formula_str
               in
               let result =
                 Checkers.Relational.model_check
@@ -72,9 +70,8 @@ let tests_from_pair (model_path, test_path) =
             in
             fun formula_str point expected _ ->
               let formula =
-                Logics.Probabilistic.formula_of_ast
-                  (Logics.Probabilistic.parse_formula
-                     formula_str)
+                Logics.Probabilistic.parse_formula
+                  formula_str
               in
               let result =
                 Checkers.Probabilistic.model_check
@@ -94,12 +91,15 @@ let tests_from_pair (model_path, test_path) =
           >:: make_check formula state expected)
 
 let test_pairs =
-  [ (* ("data/k1.model", "data/k1.test")
+  [
+    ("data/k1.model", "data/k1.test")
   ; ("data/k2.model", "data/k2.test")
   ; ("data/k3.model", "data/k3.test")
   ; ("data/k_game.model", "data/k_game.test")
+  (* ; ("data/k12.model", "data/k12.test") *)
   ; ("data/prob1.model", "data/prob1.test")
-  ; ("data/prob_split.model", "data/prob_split.test") *) ]
+    (* ; ("data/prob_split.model", "data/prob_split.test") *)
+  ]
 
 let suite =
   "Model_checking"

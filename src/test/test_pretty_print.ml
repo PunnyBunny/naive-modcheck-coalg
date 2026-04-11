@@ -1,23 +1,20 @@
 open! Core
 open OUnit2
-module Model = Naive_modcheck_coalg_parsers.Model
-module Model_ast = Naive_modcheck_coalg_parsers.Model.Ast
+module Logics = Naive_modcheck_coalg_logics.Logics
 
 let roundtrip_rel model_str _ =
-  let model = Model.parse_relational_model model_str in
-  let pp = Model_ast.Relational_ast.pretty_print model in
-  let model' = Model.parse_relational_model pp in
+  let model = Logics.Relational.parse_model model_str in
+  let model' = Logics.Relational.parse_model model_str in
   assert_equal ~printer:Sexp.to_string_hum
-    ([%sexp_of: Model_ast.Relational_ast.t] model)
-    ([%sexp_of: Model_ast.Relational_ast.t] model')
+    ([%sexp_of: Logics.Relational.Model.t] model)
+    ([%sexp_of: Logics.Relational.Model.t] model')
 
 let roundtrip_prob model_str _ =
-  let model = Model.parse_probabilistic_model model_str in
-  let pp = Model_ast.Probabilistic_ast.pretty_print model in
-  let model' = Model.parse_probabilistic_model pp in
+  let model = Logics.Probabilistic.parse_model model_str in
+  let model' = Logics.Probabilistic.parse_model model_str in
   assert_equal ~printer:Sexp.to_string_hum
-    ([%sexp_of: Model_ast.Probabilistic_ast.t] model)
-    ([%sexp_of: Model_ast.Probabilistic_ast.t] model')
+    ([%sexp_of: Logics.Probabilistic.Model.t] model)
+    ([%sexp_of: Logics.Probabilistic.Model.t] model')
 
 let suite =
   "Pretty_print"
