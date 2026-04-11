@@ -49,19 +49,8 @@ module Make (M : SPEC) = struct
 
   let states model = Hashtbl.keys model
 
-  let pretty_print tbl =
-    let entries =
-      Hashtbl.Poly.fold tbl ~init:[]
-        ~f:(fun ~key:state ~data:succ acc ->
-          let state_str = State.to_string state in
-          let succ_str =
-            M.to_string succ
-              ~to_string_inner:State.to_string
-          in
-          {%string|%{state_str}: %{succ_str}|} :: acc)
-    in
-    let inner = String.concat ~sep:", " entries in
-    {%string|[%{inner}]|}
+  let transition_to_string trans =
+    M.to_string trans ~to_string_inner:State.to_string
 
   let parse_model =
     let entry =

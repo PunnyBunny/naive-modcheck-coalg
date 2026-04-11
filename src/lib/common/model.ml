@@ -9,7 +9,7 @@ module type S = sig
   type t = (State.t, State.t transition) Hashtbl.Poly.t
   [@@deriving sexp]
 
+  val transition_to_string : State.t transition -> string
   val states : t -> State.t list
-  val pretty_print : t -> string
   val parse_model : string -> t
 end

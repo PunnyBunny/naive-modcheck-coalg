@@ -24,8 +24,7 @@ let name (Packed (n, _)) = n
 let run (Packed (_, (module C))) ~verbose ~model_src
     ~formula_src ~point =
   let model = C.Logic.parse_model model_src in
-  let formula_ast = C.Logic.parse_formula formula_src in
-  let formula = C.Logic.formula_of_ast formula_ast in
+  let formula = C.Logic.parse_formula formula_src in
   C.model_check_full ~verbose ~model ~point ~formula
 
 (* ── Built-in logics ──────────────────────────────────────────────────── *)

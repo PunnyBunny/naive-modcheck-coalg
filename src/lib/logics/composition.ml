@@ -22,33 +22,37 @@ struct
       (B.Formula_spec)
 
   module One_step (M : sig
-    type formula
-    type state
+    type formula [@@deriving sexp]
+    type state [@@deriving sexp]
   end) =
   struct
     module B_inst = B.One_step (M)
 
     module A_inst = A.One_step (struct
-      type formula = M.formula B_closed.t
-      type state = M.state B.Model_spec.t
+      type formula = M.formula B_closed.t [@@deriving sexp]
+      type state = M.state B.Model_spec.t [@@deriving sexp]
     end)
 
     type inner_node =
       | A_inner of A_inst.inner_node (* Inner nodes of A *)
-      | Both of M.formula B_closed.t * M.state B.Model_spec.t
+      | Both of
+          M.formula B_closed.t * M.state B.Model_spec.t
         (* Exit nodes of A = Start nodes of B *)
       | B_inner of B_inst.inner_node (* Inner nodes of B *)
+    [@@deriving sexp]
 
     type one_step_node =
       | Start
       | Inner of inner_node
       | Exit of M.formula * M.state
+    [@@deriving sexp]
 
     type one_step_game_t =
       ( one_step_node
       , Game.Player.t * Game.Priority.t * one_step_node list
       )
       Hashtbl.Poly.t
+    [@@deriving sexp]
 
     let one_step_game ~(transition : M.state Model_spec.t)
         ~(modal_formula : M.formula Formula_spec.t) :
@@ -112,11 +116,12 @@ struct
           | Some (player', priority, succs) ->
               if Game.Player.equal player' player then
                 (player', priority, dst_nodes @ succs)
-              else failwith "Player mismatch when adding edge")
+              else
+                failwith "Player mismatch when adding edge")
       in
       List.iter b_transitions ~f:(fun b_transition ->
-          let rec add_b_games (formula : M.formula B_closed.t)
-              =
+          let rec add_b_games
+              (formula : M.formula B_closed.t) =
             match formula with
             | True
             | False ->
@@ -143,7 +148,8 @@ struct
                   Game.Player.Eloise
             | Modal body ->
                 let b_game =
-                  B_inst.one_step_game ~transition:b_transition
+                  B_inst.one_step_game
+                    ~transition:b_transition
                     ~modal_formula:body
                 in
                 add_b_game formula b_transition b_game

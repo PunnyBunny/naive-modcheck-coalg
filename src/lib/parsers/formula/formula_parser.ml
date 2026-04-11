@@ -43,6 +43,22 @@ module Make (M : SPEC) = struct
     | Nu of Var.t * t
   [@@deriving sexp]
 
+  let rec to_string (formula : t) : string =
+    match formula with
+    | True -> "true"
+    | False -> "false"
+    | Var x -> Var.to_string x
+    | And (f1, f2) ->
+        [%string "((%{to_string f1}) && (%{to_string f2}))"]
+    | Or (f1, f2) ->
+        [%string "((%{to_string f1}) || (%{to_string f2}))"]
+    | Mu (x, f) ->
+        [%string "(mu %{Var.to_string x} . %{to_string f})"]
+    | Nu (x, f) ->
+        [%string "(nu %{Var.to_string x} . %{to_string f})"]
+    | Modal m ->
+        "(" ^ M.to_string m ~to_string_inner:to_string ^ ")"
+
   type t' =
     | Not of t'
     | True'

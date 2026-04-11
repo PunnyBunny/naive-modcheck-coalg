@@ -14,12 +14,12 @@ module Make (A : CONSTANT_SPEC) = struct
   let to_string state ~to_string_inner:_ =
     match state with
     | Normal a -> A.to_string a
-    | Not a -> "~" ^ A.to_string a
+    | Not a -> "!" ^ A.to_string a
 
   (* TODO: review syntax ~ *)
   let parser ~formula_inner:_ =
     let normal = A.parser >>| fun a -> Normal a in
-    let not_ = kw "~" *> A.parser >>| fun a -> Not a in
+    let not_ = kw "!" *> A.parser >>| fun a -> Not a in
     normal <|> not_
 
   let dual = function

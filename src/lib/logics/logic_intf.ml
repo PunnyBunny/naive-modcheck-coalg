@@ -22,21 +22,23 @@ module type S = sig
           (** Returns ad(theta(X)) for a variable X *)
   }
 
-  type inner_node
+  type inner_node [@@deriving sexp]
 
   type one_step_node =
     | Start
     | Inner of inner_node
-    | Exit of Formula.t * Model.t
+    | Exit of Formula.t * State.t
+  [@@deriving sexp]
 
   type one_step_game_t =
     ( one_step_node
     , Game.Player.t * Game.Priority.t * one_step_node list
     )
     Hashtbl.Poly.t
+  [@@deriving sexp]
 
   val one_step_game :
-       transition:Model.t Model.transition
+       transition:State.t Model.transition
     -> modal_formula:Formula.t Formula.modality
     -> one_step_game_t
 
@@ -78,21 +80,24 @@ module type LOGIC_SPECIFICATION = sig
   module Formula_spec : Formula_parser.SPEC
 
   module One_step (M : sig
-    type formula
-    type state (* TODO: abstract this module argument *)
+    type formula [@@deriving sexp]
+    type state [@@deriving sexp]
+    (* TODO: abstract this module argument *)
   end) : sig
-    type inner_node
+    type inner_node [@@deriving sexp]
 
     type one_step_node =
       | Start
       | Inner of inner_node
       | Exit of M.formula * M.state
+    [@@deriving sexp]
 
     type one_step_game_t =
       ( one_step_node
       , Game.Player.t * Game.Priority.t * one_step_node list
       )
       Hashtbl.Poly.t
+    [@@deriving sexp]
 
     val one_step_game :
          transition:M.state Model_spec.t

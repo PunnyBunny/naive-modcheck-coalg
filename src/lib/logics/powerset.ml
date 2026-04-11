@@ -6,22 +6,24 @@ module Model_spec = Model_parsers.Powerset
 module Formula_spec = Formula_parsers.Powerset
 
 module One_step (M : sig
-  type formula
-  type state
+  type formula [@@deriving sexp]
+  type state [@@deriving sexp]
 end) =
 struct
-  type inner_node
+  type inner_node [@@deriving sexp]
 
   type one_step_node =
     | Start
     | Inner of inner_node
     | Exit of M.formula * M.state
+  [@@deriving sexp]
 
   type one_step_game_t =
     ( one_step_node
     , Game.Player.t * Game.Priority.t * one_step_node list
     )
     Hashtbl.Poly.t
+  [@@deriving sexp]
 
   let one_step_game
       ~transition:(succs : M.state Model_spec.t)

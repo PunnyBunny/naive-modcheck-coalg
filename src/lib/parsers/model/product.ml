@@ -19,7 +19,7 @@ struct
     kw "("
     *> lift2
          (fun a b -> (a, b))
-         (A.parser ~model_inner:(model_inner <* kw ","))
+         (A.parser ~model_inner <* kw ",")
          (B.parser ~model_inner)
     <* kw ")"
 end

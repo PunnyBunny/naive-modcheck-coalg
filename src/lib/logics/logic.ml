@@ -11,8 +11,8 @@ module Make (Spec : LOGIC_SPECIFICATION) : S = struct
   module Formula = Formula_parser.Make (Formula_spec)
 
   include Spec.One_step (struct
-    type formula = Formula.t
-    type state = Model.t
+    type formula = Formula.t [@@deriving sexp]
+    type state = State.t [@@deriving sexp]
   end)
 
   let parse_model = Model.parse_model

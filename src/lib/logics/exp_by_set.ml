@@ -24,8 +24,8 @@ struct
     Formula_parsers.Exp_by_set.Make (A) (S.Formula_spec)
 
   module One_step (M : sig
-    type formula
-    type state
+    type formula [@@deriving sexp]
+    type state [@@deriving sexp]
   end) =
   struct
     module S_inst = S.One_step (M)
@@ -33,19 +33,23 @@ struct
     type inner_node =
       | A of M.formula S_closed.t
       | S_inner of S_inst.inner_node
+    [@@deriving sexp]
 
     type one_step_node =
       | Start
       | Inner of inner_node
       | Exit of M.formula * M.state
+    [@@deriving sexp]
 
     type one_step_game_t =
       ( one_step_node
       , Game.Player.t * Game.Priority.t * one_step_node list
       )
       Hashtbl.Poly.t
+    [@@deriving sexp]
 
-    let one_step_game ~transition:(tbl : M.state Model_spec.t)
+    let one_step_game
+        ~transition:(tbl : M.state Model_spec.t)
         ~(modal_formula : M.formula Formula_spec.t) :
         one_step_game_t =
       let game = Hashtbl.Poly.create () in
@@ -56,7 +60,8 @@ struct
           | Some (player', priority, succs) ->
               if Game.Player.equal player' player then
                 (player', priority, dst_nodes @ succs)
-              else failwith "Player mismatch when adding edge")
+              else
+                failwith "Player mismatch when adding edge")
       in
       let convert_s_node (formula : M.formula S_closed.t)
           (node : S_inst.one_step_node) =
@@ -100,6 +105,9 @@ struct
             add_game formula s_game
       in
       add_games formula;
+      add_edge Start
+        [ Inner (A formula) ]
+        Game.Player.Eloise;
       game
   end
 end
