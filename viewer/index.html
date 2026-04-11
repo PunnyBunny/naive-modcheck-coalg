@@ -131,8 +131,8 @@
         <div class="text-sm font-mono break-all" id="det-id">N/A</div>
       </div>
       <div class="mb-2.5">
-        <div class="text-[11px] text-muted uppercase mb-0.5">Label</div>
-        <div class="text-sm font-mono break-all" id="det-label">N/A</div>
+        <div class="text-[11px] text-muted uppercase mb-0.5">Formula</div>
+        <div class="text-sm font-mono break-all" id="det-formula">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Owner</div>
@@ -147,8 +147,12 @@
         <div class="text-sm font-mono break-all" id="det-winner">N/A</div>
       </div>
       <div class="mb-2.5">
-        <div class="text-[11px] text-muted uppercase mb-0.5">State(s)</div>
-        <div class="text-sm font-mono break-all" id="det-states">N/A</div>
+        <div class="text-[11px] text-muted uppercase mb-0.5">State / Transition</div>
+        <div class="text-sm font-mono break-all" id="det-state-or-transition">N/A</div>
+      </div>
+      <div class="mb-2.5">
+        <div class="text-[11px] text-muted uppercase mb-0.5">One-step Info</div>
+        <div class="text-sm font-mono break-all" id="det-one-step-info">N/A</div>
       </div>
       <div class="mb-2.5">
         <div class="text-[11px] text-muted uppercase mb-0.5">Start Node</div>
@@ -211,21 +215,23 @@
       // Elements
       const elements = [];
       for (const node of data.nodes) {
-        const states = node.states || [];
-        const stateStr = states.length === 1 ? states[0]
-          : '{' + states.join(', ') + '}';
+        const stateOrTransition = node.stateOrTransition;
+        const formula = node.formula;
+        const oneStepInfo = node.oneStepInfo;
+        const oneStepSuffix = node.isOneStep ? '; ' + oneStepInfo : '';
         elements.push({
           data: {
             id: 'n' + node.id,
-            label: node.label + ' @ ' + stateStr + ' | ' + node.priority,
-            fullLabel: node.label,
+            label: formula + ' @ ' + stateOrTransition + ' | ' + node.priority + oneStepSuffix,
+            formula,
             owner: node.owner,
             priority: node.priority,
             winner: node.winner,
             isStart: node.isStart,
-            isModal: !!node.isModal,
+            isModal: !!node.isOneStep,
             ownerWins: node.owner === node.winner,
-            states: stateStr,
+            stateOrTransition,
+            oneStepInfo,
           }
         });
       }
@@ -374,11 +380,12 @@
         selectedNodeId = d.id;
         document.getElementById('btn-focus-node').disabled = false;
         document.getElementById('det-id').textContent = d.id;
-        document.getElementById('det-label').textContent = d.fullLabel || 'N/A';
+        document.getElementById('det-formula').textContent = d.formula || 'N/A';
         document.getElementById('det-owner').textContent = d.owner || 'N/A';
         document.getElementById('det-priority').textContent = d.priority != null ? d.priority : 'N/A';
         document.getElementById('det-winner').textContent = d.winner || 'N/A';
-        document.getElementById('det-states').textContent = d.states || 'N/A';
+        document.getElementById('det-state-or-transition').textContent = d.stateOrTransition || 'N/A';
+        document.getElementById('det-one-step-info').textContent = d.oneStepInfo || 'N/A';
         document.getElementById('det-start').textContent = d.isStart ? 'Yes' : 'No';
         populateNeighbourButtons('det-parents', node.incomers('node').filter(n => !n.data('isStartMarker')));
         populateNeighbourButtons('det-successors', node.outgoers('node').filter(n => !n.data('isStartMarker')));
@@ -418,7 +425,7 @@
         const d = n.data();
         const btn = document.createElement('button');
         btn.className = 'text-left text-xs font-mono px-2 py-1 rounded bg-accent hover:bg-highlight border border-highlight truncate';
-        btn.title = d.fullLabel || d.label || d.id;
+        btn.title = d.formula || d.label || d.id;
         btn.textContent = d.label || d.id;
         btn.addEventListener('click', () => focusNode(d.id));
         container.appendChild(btn);

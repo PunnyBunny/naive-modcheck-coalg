@@ -9,16 +9,18 @@ let export_json
         `Assoc
           [
             ("id", `Int i)
-          ; ("label", `String game_data.node_labels.(i))
+          ; ("formula", `String game_data.node_formulas.(i))
+          ; ( "stateOrTransition"
+            , `String
+                game_data.node_states_or_transitions.(i) )
+          ; ( "oneStepInfo"
+            , `String game_data.node_one_step_info.(i) )
           ; ("owner", `String game_data.node_owners.(i))
           ; ("priority", `Int game_data.node_priorities.(i))
           ; ("winner", `String game_data.winners.(i))
           ; ("isStart", `Bool (i = game_data.starting_node))
-          ; ("isModal", `Bool game_data.node_is_modal.(i))
-          ; ( "states"
-            , `List
-                (List.map game_data.node_states.(i)
-                   ~f:(fun s -> `String s)) )
+          ; ( "isOneStep"
+            , `Bool game_data.node_is_one_step.(i) )
           ])
   in
   let edges =
