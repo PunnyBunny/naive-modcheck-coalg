@@ -51,3 +51,6 @@ generated/
 
 # Python cache files
 __pycache__/
+
+# Test script
+test.sh
