@@ -13,4 +13,6 @@ struct
 
   let parser ~model_inner =
     A.parser ~model_inner:(B.parser ~model_inner)
+
+  let default () = A.default ()
 end

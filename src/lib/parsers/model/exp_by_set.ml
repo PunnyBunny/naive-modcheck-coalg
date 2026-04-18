@@ -34,4 +34,6 @@ struct
     in
     kw "[" *> sep_by (kw ",") entry
     <* kw "]" >>| Hashtbl.Poly.of_alist_exn
+
+  let default () = Hashtbl.Poly.create ()
 end

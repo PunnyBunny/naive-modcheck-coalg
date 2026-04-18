@@ -13,3 +13,5 @@ let to_string states ~to_string_inner =
 
 let parser ~model_inner =
   kw "{" *> sep_by (kw ",") model_inner <* kw "}"
+
+let default () = []

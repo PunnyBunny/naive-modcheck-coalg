@@ -22,4 +22,6 @@ struct
          (A.parser ~model_inner <* kw ",")
          (B.parser ~model_inner)
     <* kw ")"
+
+  let default () = (A.default (), B.default ())
 end

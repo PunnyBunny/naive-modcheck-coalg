@@ -25,6 +25,8 @@ module Make (A : CONSTANT_SPEC) = struct
     let parser =
       let open Angstrom in
       kw "{" *> sep_by (kw ",") A.parser <* kw "}"
+
+    let default () = []
   end
 
   module Model_spec = Model_parsers.Constant.Make (A_list)

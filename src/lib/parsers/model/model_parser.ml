@@ -39,6 +39,7 @@ module type SPEC = sig
     'a t -> to_string_inner:('a -> string) -> string
 
   val parser : model_inner:'a Angstrom.t -> 'a t Angstrom.t
+  val default : unit -> 'a t
 end
 
 module Make (M : SPEC) = struct
