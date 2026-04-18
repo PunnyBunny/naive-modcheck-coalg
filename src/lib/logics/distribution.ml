@@ -34,13 +34,14 @@ struct
     let formula =
       match modal_formula with
       | GT (_, f)
-      | GE (_, f)
-      | LT (_, f)
-      | LE (_, f) ->
+      | GE (_, f) ->
           f
     in
     let game = Hashtbl.Poly.create () in
-    let get_prob state = Hashtbl.find_exn dist state in
+    let get_prob state =
+      Hashtbl.find dist state
+      |> Option.value ~default:Frac.zero
+    in
     let rec get_eloise_nodes_list xs total_prob states =
       match states with
       | [] -> (
@@ -49,9 +50,16 @@ struct
           | GE (p, _) when total_prob >= p -> [ xs ]
           | _ -> [])
       | s :: ss ->
+          let s_prob = get_prob s in
           get_eloise_nodes_list xs total_prob ss
-          @ get_eloise_nodes_list (s :: xs)
-              (total_prob + get_prob s)
+          @
+          if
+            Frac.compare s_prob Frac.zero = 0
+            (* Always suboptimal to include impossible states *)
+          then []
+          else
+            get_eloise_nodes_list (s :: xs)
+              (total_prob + s_prob)
               ss
     in
     let eloise_nodes_list =

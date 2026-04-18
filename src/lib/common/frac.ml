@@ -22,7 +22,8 @@ let t_of_sexp sexp =
   | _ -> failwith "Frac.t_of_sexp: expected (n d)"
 
 let compare = Q.compare
-let ( + ) = Q.add
+let ( + ) = Q.( + )
+let ( - ) = Q.( - )
 let ( >= ) a b = Q.compare a b >= 0
 let ( > ) a b = Q.compare a b > 0
 let to_string = Q.to_string
