@@ -99,7 +99,10 @@ struct
         | Modal body ->
             let s_game =
               S_inst.one_step_game
-                ~transition:(Hashtbl.find_exn tbl a)
+                ~transition:
+                  (Hashtbl.find tbl a
+                  |> Option.value
+                       ~default:(S.Model_spec.default ()))
                 ~modal_formula:body
             in
             add_game formula s_game
