@@ -1,3 +1,4 @@
-(* prob_20states: 20-state reactive PML model, all states have p. *)
-PML ; mu x . (p | <1/2 a> x) ; x1 ; true
-PML ; nu x . (~p & [1/2 a] x) ; x1 ; false
+// prob_20states: 20-state reactive PML model, all states have p. 
+PML ; mu x . ([@1]p | [@2][a][>=1/2] x) ; x1 ; true
+PML ; nu x . ([@1]!p & [@2][b][>1/2] x) ; x1 ; false
+
