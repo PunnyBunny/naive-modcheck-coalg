@@ -1,11 +1,18 @@
 (tests
- (names test_model_checking test_game_export test_pretty_print)
+ (names test_model_checking test_game_export test_pretty_print
+        test_formula_parsers test_model_parsers)
+ (modules test_model_checking test_game_export test_pretty_print
+          test_formula_parsers test_model_parsers)
  (deps (source_tree data))
  (libraries naive_modcheck_coalg_parsers
+            naive_modcheck_coalg_parsers_formula
+            naive_modcheck_coalg_parsers_model
+            naive_modcheck_coalg_parsers_common
             naive_modcheck_coalg_logics
             naive_modcheck_coalg_common
             naive_modcheck_coalg_checker
             naive_modcheck_coalg_export
+            angstrom
             core
             ounit2
             yojson)
