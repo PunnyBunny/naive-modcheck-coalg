@@ -2,7 +2,6 @@ open! Core
 open Naive_modcheck_coalg_common
 open Naive_modcheck_coalg_parsers_model
 open Naive_modcheck_coalg_parsers_formula
-open Naive_modcheck_coalg_parsers_common.Lexer
 
 module type CONSTANT_SPEC = sig
   type t [@@deriving sexp, to_string, equal]
@@ -11,25 +10,10 @@ module type CONSTANT_SPEC = sig
 end
 
 module Make (A : CONSTANT_SPEC) = struct
-  module A_list = struct
-    type t = A.t list [@@deriving sexp, equal]
+  module Model_spec =
+    Model_parsers.Constant.Make
+      (Model_parsers.Constant.Make_list (A))
 
-    let to_string lst =
-      let inner =
-        lst
-        |> List.map ~f:A.to_string
-        |> String.concat ~sep:", "
-      in
-      Printf.sprintf "{%s}" inner
-
-    let parser =
-      let open Angstrom in
-      kw "{" *> sep_by (kw ",") A.parser <* kw "}"
-
-    let default () = []
-  end
-
-  module Model_spec = Model_parsers.Constant.Make (A_list)
   module Formula_spec = Formula_parsers.Constant.Make (A)
 
   module One_step (M : sig

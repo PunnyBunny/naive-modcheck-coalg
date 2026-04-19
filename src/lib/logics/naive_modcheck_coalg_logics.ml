@@ -1,4 +1,5 @@
 module Logic = Logic
+module Specs = Specs
 
 module Logics = struct
   (* TODO: implement the logics *)
