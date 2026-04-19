@@ -28,6 +28,6 @@ struct
       (kw "[" *> A.parser <* kw "]")
       (S_closed.parser ~formula_inner)
 
-  let dual (a, x) = (a, x)
+  let dual (a, x) = (a, S_closed.dual x)
   let map ~f (a, x) = (a, S_closed.map ~f x)
 end
