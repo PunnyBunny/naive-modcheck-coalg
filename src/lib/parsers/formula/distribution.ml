@@ -22,7 +22,7 @@ let to_string fmla ~to_string_inner =
   in
   let fmla'_str = to_string_inner fmla' in
   let frac_str = Frac.to_string frac in
-  {%string|%[%{op_str} %{frac_str}] (%{fmla'_str})|}
+  {%string|[%{op_str} %{frac_str}] (%{fmla'_str})|}
 
 let parser ~formula_inner =
   let frac =
