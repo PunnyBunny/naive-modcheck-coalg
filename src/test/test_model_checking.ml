@@ -96,9 +96,10 @@ let test_pairs =
   ; ("data/k2.model", "data/k2.test")
   ; ("data/k3.model", "data/k3.test")
   ; ("data/k_game.model", "data/k_game.test")
-  (* ; ("data/k12.model", "data/k12.test") *)
+  ; ("data/k12.model", "data/k12.test")
   ; ("data/prob1.model", "data/prob1.test")
-    (* ; ("data/prob_split.model", "data/prob_split.test") *)
+  ; ("data/prob_split.model", "data/prob_split.test")
+  ; ("data/prob_20states.model", "data/prob_20states.test")
   ]
 
 let suite =
